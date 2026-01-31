@@ -166,5 +166,241 @@ class TestConfigLoading:
             os.unlink(fname)
 
 
+class TestAgentLifecycle:
+    """Test agent start/stop lifecycle."""
+    
+    def test_agent_is_running_initially_false(self):
+        """Test agent is_running is False initially."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping={},
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key"
+            )
+            assert agent.is_running is False
+    
+    def test_agent_stop_when_not_running(self):
+        """Test stop is safe when agent not running."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping={},
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key"
+            )
+            # Should not raise exception
+            agent.stop()
+            assert agent.is_running is False
+    
+    def test_agent_manager_created(self):
+        """Test multiprocessing Manager is created."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping={},
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key"
+            )
+            assert agent.manager is not None
+            assert agent.event_queue is not None
+
+
+class TestAgentPaths:
+    """Test agent path handling."""
+    
+    def test_agent_multiple_watch_paths(self):
+        """Test agent with multiple watch paths."""
+        with tempfile.TemporaryDirectory() as tmpdir1:
+            with tempfile.TemporaryDirectory() as tmpdir2:
+                agent = HoneyGridAgent(
+                    agent_id="test",
+                    server_host="localhost",
+                    server_port=9000,
+                    watch_paths=[tmpdir1, tmpdir2],
+                    token_mapping={},
+                    ca_cert_path="certs/ca.crt",
+                    client_cert_path="certs/client.crt",
+                    client_key_path="certs/client.key"
+                )
+                assert len(agent.watch_paths) == 2
+                assert tmpdir1 in agent.watch_paths
+                assert tmpdir2 in agent.watch_paths
+    
+    def test_agent_empty_watch_paths(self):
+        """Test agent with empty watch paths."""
+        agent = HoneyGridAgent(
+            agent_id="test",
+            server_host="localhost",
+            server_port=9000,
+            watch_paths=[],
+            token_mapping={},
+            ca_cert_path="certs/ca.crt",
+            client_cert_path="certs/client.crt",
+            client_key_path="certs/client.key"
+        )
+        assert agent.watch_paths == []
+
+
+class TestAgentTokenMapping:
+    """Test agent token mapping."""
+    
+    def test_agent_empty_token_mapping(self):
+        """Test agent with empty token mapping."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping={},
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key"
+            )
+            assert agent.token_mapping == {}
+    
+    def test_agent_multiple_token_mappings(self):
+        """Test agent with multiple token mappings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mapping = {
+                "token1": "/path/to/file1.txt",
+                "token2": "/path/to/file2.doc",
+                "token3": "/path/to/file3.pdf"
+            }
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping=mapping,
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key"
+            )
+            assert len(agent.token_mapping) == 3
+            assert agent.token_mapping["token1"] == "/path/to/file1.txt"
+
+
+class TestAgentServerConfig:
+    """Test agent server configuration."""
+    
+    def test_agent_different_ports(self):
+        """Test agent with different server ports."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for port in [8443, 9000, 10000]:
+                agent = HoneyGridAgent(
+                    agent_id="test",
+                    server_host="localhost",
+                    server_port=port,
+                    watch_paths=[tmpdir],
+                    token_mapping={},
+                    ca_cert_path="certs/ca.crt",
+                    client_cert_path="certs/client.crt",
+                    client_key_path="certs/client.key"
+                )
+                assert agent.server_port == port
+    
+    def test_agent_different_hosts(self):
+        """Test agent with different server hosts."""
+        hosts = ["localhost", "127.0.0.1", "example.com", "192.168.1.1"]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for host in hosts:
+                agent = HoneyGridAgent(
+                    agent_id="test",
+                    server_host=host,
+                    server_port=9000,
+                    watch_paths=[tmpdir],
+                    token_mapping={},
+                    ca_cert_path="certs/ca.crt",
+                    client_cert_path="certs/client.crt",
+                    client_key_path="certs/client.key"
+                )
+                assert agent.server_host == host
+
+
+class TestAgentHeartbeat:
+    """Test agent heartbeat configuration."""
+    
+    def test_agent_default_heartbeat(self):
+        """Test agent default heartbeat interval."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping={},
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key"
+            )
+            assert agent.heartbeat_interval == 30.0
+    
+    def test_agent_custom_heartbeat(self):
+        """Test agent custom heartbeat interval."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for interval in [10.0, 60.0, 120.0]:
+                agent = HoneyGridAgent(
+                    agent_id="test",
+                    server_host="localhost",
+                    server_port=9000,
+                    watch_paths=[tmpdir],
+                    token_mapping={},
+                    ca_cert_path="certs/ca.crt",
+                    client_cert_path="certs/client.crt",
+                    client_key_path="certs/client.key",
+                    heartbeat_interval=interval
+                )
+                assert agent.heartbeat_interval == interval
+
+
+class TestAgentRecursive:
+    """Test agent recursive monitoring option."""
+    
+    def test_agent_recursive_default(self):
+        """Test agent recursive is True by default."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping={},
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key"
+            )
+            assert agent.recursive is True
+    
+    def test_agent_recursive_false(self):
+        """Test agent recursive can be set to False."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = HoneyGridAgent(
+                agent_id="test",
+                server_host="localhost",
+                server_port=9000,
+                watch_paths=[tmpdir],
+                token_mapping={},
+                ca_cert_path="certs/ca.crt",
+                client_cert_path="certs/client.crt",
+                client_key_path="certs/client.key",
+                recursive=False
+            )
+            assert agent.recursive is False
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
