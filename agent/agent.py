@@ -14,8 +14,8 @@ from pathlib import Path
 from multiprocessing import Manager
 from typing import List, Dict, Optional
 
-from monitor import FSMonitor, MonitorEvent
-from sender import SenderProcess
+from agent.monitor import FSMonitor, MonitorEvent
+from agent.sender import SenderProcess
 
 
 # Configure logging
