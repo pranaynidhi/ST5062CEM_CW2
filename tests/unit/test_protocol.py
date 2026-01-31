@@ -306,6 +306,84 @@ class TestValidation:
         msg = Message(header=header, data={})
         with pytest.raises(ValidationError):
             msg.validate()
+    
+    def test_future_timestamp(self):
+        """Test that future timestamps are rejected."""
+        header = MessageHeader(
+            nonce=generate_nonce(),
+            timestamp=int(time.time()) + 3600,  # 1 hour in future
+            agent_id="agent-001",
+            msg_type="event"
+        )
+        msg = Message(header=header, data={})
+        with pytest.raises(ValidationError):
+            msg.validate()
+    
+    def test_invalid_msg_type(self):
+        """Test that invalid message type fails validation."""
+        header = MessageHeader(
+            nonce=generate_nonce(),
+            timestamp=int(time.time()),
+            agent_id="agent-001",
+            msg_type="invalid_type"
+        )
+        msg = Message(header=header, data={})
+        with pytest.raises(ValidationError):
+            msg.validate()
+    
+    def test_empty_agent_id(self):
+        """Test that empty agent_id fails validation."""
+        header = MessageHeader(
+            nonce=generate_nonce(),
+            timestamp=int(time.time()),
+            agent_id="",
+            msg_type="event"
+        )
+        msg = Message(header=header, data={})
+        with pytest.raises(ValidationError):
+            msg.validate()
+
+
+class TestHelperFunctions:
+    """Test protocol helper functions."""
+    
+    def test_create_event_message_structure(self):
+        """Test event message structure."""
+        msg = create_event_message(
+            agent_id="agent-001",
+            token_id="token-001",
+            path="/tmp/honey.txt",
+            event_type="file_access",
+            details={"user": "attacker"}
+        )
+        
+        assert msg.header.msg_type == "event"
+        assert msg.data["event_type"] == "file_access"
+        assert msg.data["path"] == "/tmp/honey.txt"
+        assert msg.data["token_id"] == "token-001"
+        assert msg.data["details"]["user"] == "attacker"
+    
+    def test_create_heartbeat_message_structure(self):
+        """Test heartbeat message structure."""
+        msg = create_heartbeat_message(
+            agent_id="agent-001",
+            status="active"
+        )
+        
+        assert msg.header.msg_type == "heartbeat"
+        assert msg.data["status"] == "active"
+    
+    def test_create_message_with_data(self):
+        """Test creating generic message with data."""
+        data = {"key1": "value1", "key2": 42, "key3": [1, 2, 3]}
+        msg = create_message(
+            agent_id="agent-001",
+            msg_type="status",
+            data=data
+        )
+        
+        assert msg.header.msg_type == "status"
+        assert msg.data == data
 
 
 if __name__ == "__main__":

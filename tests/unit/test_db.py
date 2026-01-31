@@ -292,6 +292,99 @@ class TestStatistics:
         assert stats["total_events"] == 1
         assert stats["total_tokens"] == 1
         assert "db_size_bytes" in stats
+    
+    def test_get_stats_empty_db(self, temp_db):
+        """Test getting stats from empty database."""
+        stats = temp_db.get_stats()
+        
+        assert stats["total_agents"] == 0
+        assert stats["total_events"] == 0
+        assert stats["total_tokens"] == 0
+        assert stats["db_size_bytes"] > 0
+
+
+class TestDatabaseQueries:
+    """Test various database query operations."""
+    
+    def test_list_all_agents(self, temp_db):
+        """Test listing all registered agents."""
+        temp_db.register_agent("agent-001")
+        temp_db.register_agent("agent-002")
+        temp_db.register_agent("agent-003")
+        
+        # Verify each agent individually
+        agent1 = temp_db.get_agent("agent-001")
+        agent2 = temp_db.get_agent("agent-002")
+        agent3 = temp_db.get_agent("agent-003")
+        
+        assert agent1 is not None
+        assert agent2 is not None
+        assert agent3 is not None
+    
+    def test_list_all_tokens(self, temp_db):
+        """Test registering multiple tokens."""
+        temp_db.register_token("token-001", "Token 1", "/path1")
+        temp_db.register_token("token-002", "Token 2", "/path2")
+        
+        # Verify each token individually
+        token1 = temp_db.get_token("token-001")
+        token2 = temp_db.get_token("token-002")
+        
+        assert token1 is not None
+        assert token2 is not None
+    
+    def test_get_agent_events(self, temp_db):
+        """Test retrieving events using timerange query."""
+        temp_db.register_agent("agent-001")
+        temp_db.register_agent("agent-002")
+        
+        # Add events for both agents
+        temp_db.insert_event("agent-001", "token-001", "/path1", "opened", "nonce1")
+        temp_db.insert_event("agent-001", "token-002", "/path2", "modified", "nonce2")
+        temp_db.insert_event("agent-002", "token-003", "/path3", "opened", "nonce3")
+        
+        # Get recent events using timerange
+        events = temp_db.get_events_by_timerange(start_time=0, end_time=int(time.time()) + 100)
+        assert len(events) >= 3
+    
+    def test_get_token_events(self, temp_db):
+        """Test retrieving multiple events from database."""
+        temp_db.register_agent("agent-001")
+        temp_db.register_token("token-001", "Token 1", "/path1")
+        
+        # Add multiple events
+        temp_db.insert_event("agent-001", "token-001", "/path1", "opened", "nonce1")
+        temp_db.insert_event("agent-001", "token-001", "/path1", "modified", "nonce2")
+        temp_db.insert_event("agent-001", "token-002", "/path2", "opened", "nonce3")
+        
+        # Get recent events
+        events = temp_db.get_events_by_timerange(start_time=0, end_time=int(time.time()) + 100)
+        assert len(events) == 3
+
+
+class TestDatabaseCleanup:
+    """Test database cleanup and maintenance."""
+    
+    def test_close_connection(self, temp_db):
+        """Test closing database connection."""
+        temp_db.close()
+        assert temp_db.connection is None
+    
+    def test_context_manager(self):
+        """Test using database as context manager."""
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
+        temp_file.close()
+        
+        try:
+            with DatabaseManager(temp_file.name, "test_pass") as db:
+                db.connect()
+                assert db.connection is not None
+                db.register_agent("test-agent")
+            
+            # Connection should be closed after context
+            assert db.connection is None
+        finally:
+            os.unlink(temp_file.name)
 
 
 if __name__ == "__main__":
