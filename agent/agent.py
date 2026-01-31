@@ -4,13 +4,17 @@ HoneyGrid Agent
 Main agent coordinator that runs file system monitoring and secure event transmission.
 """
 
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import argparse
 import logging
 import signal
 import sys
 import time
 import threading
-from pathlib import Path
 from multiprocessing import Manager
 from typing import List, Dict, Optional
 

@@ -10,6 +10,7 @@ import socket
 import time
 import logging
 import threading
+import queue
 from pathlib import Path
 from typing import Optional, Dict, Any
 from multiprocessing import Queue
@@ -454,9 +455,11 @@ class SenderProcess:
                         metadata=event.metadata
                     )
                 
+                except queue.Empty:
+                    # Expected when no events in queue, just continue
+                    pass
                 except Exception as e:
-                    if "Empty" not in str(e):
-                        logger.error(f"Error processing event: {e}")
+                    logger.error(f"Error processing event: {e}")
         
         except KeyboardInterrupt:
             logger.info("Interrupted by user")
