@@ -7,7 +7,8 @@ Generates CA, server, and client certificates for mutual TLS authentication.
 import os
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import ipaddress
 from cryptography import x509
 from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
 from cryptography.hazmat.primitives import hashes, serialization
@@ -66,8 +67,8 @@ def create_ca(cert_dir):
         .issuer_name(issuer)
         .public_key(ca_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=3650))  # 10 years
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=3650))  # 10 years
         .add_extension(
             x509.BasicConstraints(ca=True, path_length=0),
             critical=True,
@@ -116,13 +117,13 @@ def create_server_cert(cert_dir, ca_key, ca_cert, hostname="localhost"):
         .issuer_name(ca_cert.subject)
         .public_key(server_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=365))  # 1 year
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))  # 1 year
         .add_extension(
             x509.SubjectAlternativeName([
                 x509.DNSName(hostname),
                 x509.DNSName("localhost"),
-                x509.IPAddress(b"\x7f\x00\x00\x01"),  # 127.0.0.1
+                x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
             ]),
             critical=False,
         )
@@ -178,8 +179,8 @@ def create_client_cert(cert_dir, ca_key, ca_cert, client_id="client-001"):
         .issuer_name(ca_cert.subject)
         .public_key(client_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=365))  # 1 year
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))  # 1 year
         .add_extension(
             x509.BasicConstraints(ca=False, path_length=None),
             critical=True,
