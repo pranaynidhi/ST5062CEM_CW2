@@ -16,9 +16,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from server.db import DatabaseManager
-from map_frame import MapFrame
-from alert_frame import AlertFrame
-from deploy_dialog import show_deploy_dialog
+from gui_tk.map_frame import MapFrame
+from gui_tk.alert_frame import AlertFrame
+from gui_tk.deploy_dialog import show_deploy_dialog
 
 
 class HoneyGridApp:
