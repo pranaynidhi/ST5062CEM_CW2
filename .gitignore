@@ -196,3 +196,26 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+### HoneyGrid Specific ###
+# SSL Certificates (NEVER commit private keys!)
+certs/*.key
+certs/*.crt
+certs/*.pem
+
+# Encrypted database
+*.db
+*.db-journal
+data/
+
+# Agent logs
+logs/
+*.log
+
+# Honeytoken test files
+honeytokens/
+test_tokens/
+
+# Environment configuration
+.env
+config.local.py
