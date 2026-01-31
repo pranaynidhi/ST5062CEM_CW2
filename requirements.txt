@@ -1,0 +1,21 @@
+# HoneyGrid Dependencies
+# Python 3.10+ required
+
+# Cryptography and SSL (used for application-level encryption)
+cryptography>=41.0.0
+
+# File system monitoring
+watchdog>=3.0.0
+
+# Database - Using built-in sqlite3 with application-level encryption via cryptography
+# Data will be encrypted/decrypted before storing/retrieving from SQLite
+
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Code quality (optional)
+pylint>=3.0.0
+black>=23.0.0
