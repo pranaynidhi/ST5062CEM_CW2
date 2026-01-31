@@ -62,10 +62,9 @@ def run_server_process(db_path, db_password, host, port, queue, ready_event):
             port=port,
             db_path=db_path,
             db_password=db_password,
-            ca_cert=TEST_CA_CERT,
-            server_cert=TEST_SERVER_CERT,
-            server_key=TEST_SERVER_KEY,
-            gui_queue=queue
+            ca_cert_path=TEST_CA_CERT,
+            server_cert_path=TEST_SERVER_CERT,
+            server_key_path=TEST_SERVER_KEY
         )
         
         # Signal that server is ready
@@ -88,7 +87,7 @@ class TestServerAgentCommunication:
         # Start server in background process
         server_process = multiprocessing.Process(
             target=run_server_process,
-            args=(temp_db.db_path, temp_db.db_password, TEST_HOST, TEST_PORT, server_queue, ready_event)
+            args=(temp_db.db_path, temp_db.password, TEST_HOST, TEST_PORT, server_queue, ready_event)
         )
         server_process.start()
         
@@ -102,9 +101,9 @@ class TestServerAgentCommunication:
                 agent_id="test-agent-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
-                ca_cert=TEST_CA_CERT,
-                client_cert=TEST_CLIENT_CERT,
-                client_key=TEST_CLIENT_KEY,
+                ca_cert_path=TEST_CA_CERT,
+                client_cert_path=TEST_CLIENT_CERT,
+                client_key_path=TEST_CLIENT_KEY,
                 rate_limit=100.0
             )
             
@@ -130,7 +129,7 @@ class TestServerAgentCommunication:
         # Start server
         server_process = multiprocessing.Process(
             target=run_server_process,
-            args=(temp_db.db_path, temp_db.db_password, TEST_HOST, TEST_PORT, server_queue, ready_event)
+            args=(temp_db.db_path, temp_db.password, TEST_HOST, TEST_PORT, server_queue, ready_event)
         )
         server_process.start()
         
@@ -144,9 +143,9 @@ class TestServerAgentCommunication:
                 agent_id="test-agent-002",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
-                ca_cert=TEST_CA_CERT,
-                client_cert=TEST_CLIENT_CERT,
-                client_key=TEST_CLIENT_KEY,
+                ca_cert_path=TEST_CA_CERT,
+                client_cert_path=TEST_CLIENT_CERT,
+                client_key_path=TEST_CLIENT_KEY,
                 rate_limit=100.0
             )
             
@@ -198,7 +197,7 @@ class TestServerAgentCommunication:
         # Start server
         server_process = multiprocessing.Process(
             target=run_server_process,
-            args=(temp_db.db_path, temp_db.db_password, TEST_HOST, TEST_PORT, server_queue, ready_event)
+            args=(temp_db.db_path, temp_db.password, TEST_HOST, TEST_PORT, server_queue, ready_event)
         )
         server_process.start()
         
@@ -212,9 +211,9 @@ class TestServerAgentCommunication:
                 agent_id="test-agent-003",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
-                ca_cert=TEST_CA_CERT,
-                client_cert=TEST_CLIENT_CERT,
-                client_key=TEST_CLIENT_KEY,
+                ca_cert_path=TEST_CA_CERT,
+                client_cert_path=TEST_CLIENT_CERT,
+                client_key_path=TEST_CLIENT_KEY,
                 rate_limit=100.0
             )
             
@@ -253,7 +252,7 @@ class TestServerAgentCommunication:
         # Start server
         server_process = multiprocessing.Process(
             target=run_server_process,
-            args=(temp_db.db_path, temp_db.db_password, TEST_HOST, TEST_PORT, server_queue, ready_event)
+            args=(temp_db.db_path, temp_db.password, TEST_HOST, TEST_PORT, server_queue, ready_event)
         )
         server_process.start()
         
@@ -267,9 +266,9 @@ class TestServerAgentCommunication:
                 agent_id="test-agent-004",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
-                ca_cert=TEST_CA_CERT,
-                client_cert=TEST_CLIENT_CERT,
-                client_key=TEST_CLIENT_KEY,
+                ca_cert_path=TEST_CA_CERT,
+                client_cert_path=TEST_CLIENT_CERT,
+                client_key_path=TEST_CLIENT_KEY,
                 rate_limit=100.0
             )
             
@@ -325,7 +324,7 @@ class TestServerStatistics:
         # Start server
         server_process = multiprocessing.Process(
             target=run_server_process,
-            args=(temp_db.db_path, temp_db.db_password, TEST_HOST, TEST_PORT, server_queue, ready_event)
+            args=(temp_db.db_path, temp_db.password, TEST_HOST, TEST_PORT, server_queue, ready_event)
         )
         server_process.start()
         
@@ -341,9 +340,9 @@ class TestServerStatistics:
                     agent_id=f"test-agent-stats-{i}",
                     server_host=TEST_HOST,
                     server_port=TEST_PORT,
-                    ca_cert=TEST_CA_CERT,
-                    client_cert=TEST_CLIENT_CERT,
-                    client_key=TEST_CLIENT_KEY,
+                    ca_cert_path=TEST_CA_CERT,
+                    client_cert_path=TEST_CLIENT_CERT,
+                    client_key_path=TEST_CLIENT_KEY,
                     rate_limit=100.0
                 )
                 sender.connect()
@@ -378,3 +377,5 @@ class TestServerStatistics:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])
+
+

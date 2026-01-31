@@ -15,14 +15,14 @@ from collections import OrderedDict
 from queue import Queue
 import argparse
 
-from protocol import (
+from server.protocol import (
     read_frame,
     parse_message,
     Message,
     ProtocolError,
     ValidationError
 )
-from db import DatabaseManager
+from server.db import DatabaseManager
 
 
 # Configure logging

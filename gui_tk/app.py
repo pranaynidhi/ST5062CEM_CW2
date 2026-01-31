@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from server.db import DatabaseManager
 from map_frame import MapFrame
 from alert_frame import AlertFrame
+from deploy_dialog import show_deploy_dialog
 
 
 class HoneyGridApp:
@@ -252,11 +253,20 @@ class HoneyGridApp:
     
     def _deploy_token(self):
         """Show deploy token dialog."""
-        messagebox.showinfo(
-            "Deploy Token",
-            "Token deployment dialog not yet implemented.\n"
-            "Use agent CLI to deploy tokens."
-        )
+        if not self.db:
+            messagebox.showerror("Error", "Database not connected")
+            return
+        
+        result = show_deploy_dialog(self.root, self.db, self._on_token_deployed)
+        
+        if result:
+            # Refresh displays
+            self._refresh_data()
+    
+    def _on_token_deployed(self, deployment_info: dict):
+        """Callback when token is deployed."""
+        print(f"Token deployed: {deployment_info['token_id']} to {deployment_info['agent_id']}")
+        # Additional handling can be added here (e.g., send notification to agent)
     
     def _show_stats(self):
         """Show database statistics."""
