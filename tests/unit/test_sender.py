@@ -133,6 +133,51 @@ class TestRateLimiterEdgeCases:
         
         tokens = limiter.get_tokens()
         assert 0.9 <= tokens <= 1.1
+    
+    def test_large_burst(self):
+        """Test rate limiter with large burst capacity."""
+        limiter = RateLimiter(rate=100.0, burst=1000)
+        assert limiter.get_tokens() == 1000.0
+        
+        # Should handle large acquisitions
+        success = limiter.acquire(tokens=500, blocking=False)
+        assert success is True
+        assert 499.0 <= limiter.get_tokens() <= 500.1
+    
+    def test_high_rate(self):
+        """Test rate limiter with high rate."""
+        limiter = RateLimiter(rate=1000.0, burst=100)
+        
+        # Consume all
+        limiter.acquire(tokens=100, blocking=False)
+        
+        # Wait 0.1 second (should add 100 tokens at 1000/sec)
+        time.sleep(0.1)
+        
+        tokens = limiter.get_tokens()
+        assert 90.0 <= tokens <= 100.0  # Should be capped at burst
+    
+    def test_very_small_timeout(self):
+        """Test acquire with very small timeout."""
+        limiter = RateLimiter(rate=1.0, burst=1)
+        limiter.acquire(tokens=1, blocking=False)
+        
+        # Try with extremely small timeout
+        success = limiter.acquire(tokens=1, blocking=True, timeout=0.001)
+        assert success is False
+    
+    def test_multiple_small_acquires(self):
+        """Test multiple small token acquisitions."""
+        limiter = RateLimiter(rate=10.0, burst=10)
+        
+        # Acquire 10 times, 1 token each
+        for i in range(10):
+            success = limiter.acquire(tokens=1, blocking=False)
+            assert success is True
+        
+        # Next acquire should fail (all consumed)
+        success = limiter.acquire(tokens=1, blocking=False, timeout=0.05)
+        assert success is False
 
 
 if __name__ == "__main__":

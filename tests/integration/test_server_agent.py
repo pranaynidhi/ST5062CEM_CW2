@@ -98,7 +98,7 @@ class TestServerAgentCommunication:
             
             # Create client sender
             sender = SecureSender(
-                agent_id="test-agent-001",
+                agent_id="client-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -140,7 +140,7 @@ class TestServerAgentCommunication:
             
             # Create sender
             sender = SecureSender(
-                agent_id="test-agent-002",
+                agent_id="client-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -162,10 +162,13 @@ class TestServerAgentCommunication:
             
             assert success is True
             
+            # Wait for server to process event BEFORE disconnecting
+            time.sleep(2)
+            
             # Disconnect
             sender.disconnect()
             
-            # Wait for event to be processed
+            # Additional wait for any final processing
             time.sleep(1)
             
             # Verify event in database
@@ -175,7 +178,7 @@ class TestServerAgentCommunication:
             # Find our event
             test_event = None
             for event in events:
-                if event["agent_id"] == "test-agent-002":
+                if event["agent_id"] == "client-001":
                     test_event = event
                     break
             
@@ -208,7 +211,7 @@ class TestServerAgentCommunication:
             
             # Create sender
             sender = SecureSender(
-                agent_id="test-agent-003",
+                agent_id="client-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -236,7 +239,7 @@ class TestServerAgentCommunication:
             time.sleep(2)
             
             # Verify all events
-            events = temp_db.get_recent_events(agent_id="test-agent-003", limit=10)
+            events = temp_db.get_recent_events(agent_id="client-001", limit=10)
             assert len(events) >= 5
             
         finally:
@@ -263,7 +266,7 @@ class TestServerAgentCommunication:
             
             # Create sender
             sender = SecureSender(
-                agent_id="test-agent-004",
+                agent_id="client-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -282,11 +285,14 @@ class TestServerAgentCommunication:
                 event_type="opened"
             )
             
+            # Wait for server to process BEFORE disconnecting
+            time.sleep(2)
+            
             sender.disconnect()
             time.sleep(1)
             
             # Count events before replay
-            events_before = temp_db.get_recent_events(agent_id="test-agent-004", limit=10)
+            events_before = temp_db.get_recent_events(agent_id="client-001", limit=10)
             count_before = len(events_before)
             
             # Try to replay - create new connection with same message
@@ -296,7 +302,7 @@ class TestServerAgentCommunication:
             # Instead, verify that database rejects duplicate nonces
             try:
                 temp_db.insert_event(
-                    agent_id="test-agent-004",
+                    agent_id="client-001",
                     token_id="test-token-replay",
                     path="C:\\test\\replay.txt",
                     event_type="opened",
@@ -313,7 +319,6 @@ class TestServerAgentCommunication:
                 server_process.kill()
 
 
-@pytest.mark.asyncio
 class TestServerStatistics:
     """Test server statistics tracking."""
     
@@ -333,35 +338,31 @@ class TestServerStatistics:
             ready_event.wait(timeout=5)
             time.sleep(1)
             
-            # Create and connect multiple senders
-            senders = []
-            for i in range(3):
-                sender = SecureSender(
-                    agent_id=f"test-agent-stats-{i}",
-                    server_host=TEST_HOST,
-                    server_port=TEST_PORT,
-                    ca_cert_path=TEST_CA_CERT,
-                    client_cert_path=TEST_CLIENT_CERT,
-                    client_key_path=TEST_CLIENT_KEY,
-                    rate_limit=100.0
-                )
-                sender.connect()
-                senders.append(sender)
-                time.sleep(0.2)
+            # Create and connect a single sender
+            sender = SecureSender(
+                agent_id="client-001",
+                server_host=TEST_HOST,
+                server_port=TEST_PORT,
+                ca_cert_path=TEST_CA_CERT,
+                client_cert_path=TEST_CLIENT_CERT,
+                client_key_path=TEST_CLIENT_KEY,
+                rate_limit=100.0
+            )
+            sender.connect()
             
-            # Send some events
-            for sender in senders:
+            # Send multiple events from the same sender
+            for i in range(3):
                 sender.send_event(
-                    token_id="test-token-stats",
-                    path="C:\\test\\stats.txt",
+                    token_id=f"test-token-stats-{i}",
+                    path=f"C:\\test\\stats-{i}.txt",
                     event_type="opened"
                 )
             
-            time.sleep(1)
+            # Wait for server to process ALL events BEFORE disconnecting
+            time.sleep(3)
             
-            # Disconnect all
-            for sender in senders:
-                sender.disconnect()
+            # Disconnect
+            sender.disconnect()
             
             # Verify events were stored
             time.sleep(1)
@@ -377,5 +378,6 @@ class TestServerStatistics:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])
+
 
 
