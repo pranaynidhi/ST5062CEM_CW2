@@ -33,7 +33,7 @@ class DeployDialog:
         # Create top-level window
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Deploy Honeytoken")
-        self.dialog.geometry("600x550")
+        self.dialog.geometry("600x650")
         self.dialog.resizable(False, False)
         
         # Make dialog modal
@@ -43,7 +43,7 @@ class DeployDialog:
         # Center dialog
         self.dialog.update_idletasks()
         x = (parent.winfo_screenwidth() // 2) - (600 // 2)
-        y = (parent.winfo_screenheight() // 2) - (550 // 2)
+        y = (parent.winfo_screenheight() // 2) - (650 // 2)
         self.dialog.geometry(f"+{x}+{y}")
         
         self._build_ui()
@@ -107,7 +107,7 @@ class DeployDialog:
         
         # Agent Selection Section
         agent_frame = ttk.LabelFrame(main_frame, text="Target Agent", padding="10")
-        agent_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        agent_frame.pack(fill=tk.BOTH, pady=(0, 10))
         
         # Agent list
         list_frame = ttk.Frame(agent_frame)
@@ -162,15 +162,7 @@ class DeployDialog:
         
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X)
-        
-        deploy_btn = ttk.Button(
-            button_frame,
-            text="Deploy",
-            command=self._deploy,
-            width=15
-        )
-        deploy_btn.pack(side=tk.RIGHT, padx=(5, 0))
+        button_frame.pack(fill=tk.X, pady=(10, 0))
         
         cancel_btn = ttk.Button(
             button_frame,
@@ -178,7 +170,15 @@ class DeployDialog:
             command=self._cancel,
             width=15
         )
-        cancel_btn.pack(side=tk.RIGHT)
+        cancel_btn.pack(side=tk.RIGHT, padx=(0, 5))
+        
+        deploy_btn = ttk.Button(
+            button_frame,
+            text="Deploy",
+            command=self._deploy,
+            width=15
+        )
+        deploy_btn.pack(side=tk.RIGHT)
     
     def _load_agents(self):
         """Load available agents from database."""

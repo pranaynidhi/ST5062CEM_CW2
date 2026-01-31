@@ -5,11 +5,14 @@ Asyncio TLS server with mutual authentication, replay protection, and rate limit
 Receives events from agents and stores them in encrypted database.
 """
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import asyncio
 import ssl
 import time
 import logging
-from pathlib import Path
 from typing import Dict, Set, Optional, Any
 from collections import OrderedDict
 from queue import Queue

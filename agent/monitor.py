@@ -260,14 +260,30 @@ class FSMonitor:
         self.observer = Observer()
         
         # Schedule watches
+        watched_dirs = set()  # Track directories already being watched
         for path in self.watch_paths:
             try:
-                self.observer.schedule(
-                    self.handler,
-                    path,
-                    recursive=self.recursive
-                )
-                logger.info(f"Watching: {path} (recursive={self.recursive})")
+                path_obj = Path(path)
+                
+                # If watching a specific file, watch its parent directory
+                if path_obj.is_file():
+                    watch_dir = str(path_obj.parent.resolve())
+                    if watch_dir not in watched_dirs:
+                        self.observer.schedule(
+                            self.handler,
+                            watch_dir,
+                            recursive=False  # Don't recurse when watching a specific file's directory
+                        )
+                        watched_dirs.add(watch_dir)
+                        logger.info(f"Watching: {path} (via parent directory)")
+                else:
+                    # Watch directory directly
+                    self.observer.schedule(
+                        self.handler,
+                        path,
+                        recursive=self.recursive
+                    )
+                    logger.info(f"Watching: {path} (recursive={self.recursive})")
             except Exception as e:
                 logger.error(f"Failed to watch {path}: {e}")
         
