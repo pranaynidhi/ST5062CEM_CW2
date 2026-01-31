@@ -220,3 +220,4 @@ test_tokens/
 # Environment configuration
 .env
 config.local.py
+IMPLEMENTATION_PLAN.md
