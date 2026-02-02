@@ -59,7 +59,7 @@ class HoneyGridAgent:
             watch_paths: List of paths to monitor
             token_mapping: Map of paths to token IDs
             ca_cert_path: CA certificate path
-            client_cert_path: Client certificate path
+            client_cert_path: Agent certificate path
             client_key_path: Client private key path
             heartbeat_interval: Seconds between heartbeats
             recursive: Watch directories recursively
@@ -231,7 +231,7 @@ def main():
     )
     parser.add_argument(
         "--client-cert",
-        help="Client certificate path (default: certs/client_{agent-id}.crt)"
+        help="Agent certificate path (default: certs/client_{agent-id}.crt)"
     )
     parser.add_argument(
         "--client-key",

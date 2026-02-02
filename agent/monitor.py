@@ -7,6 +7,8 @@ Detects access, modification, and deletion events.
 
 import time
 import logging
+import threading
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, asdict
@@ -78,9 +80,17 @@ class HoneytokenHandler(FileSystemEventHandler):
         if normalized_path in self.normalized_mapping:
             return self.normalized_mapping[normalized_path]
         
-        # Check if path is within a monitored directory
+        # Check if path is within a monitored directory or sibling of monitored file
         for monitored_path, token_id in self.normalized_mapping.items():
-            if normalized_path.startswith(monitored_path):
+            monitored_path_obj = Path(monitored_path)
+            
+            # If monitored path is a file, check if new file is in same directory
+            if monitored_path_obj.is_file():
+                monitored_dir = str(monitored_path_obj.parent)
+                if normalized_path.startswith(monitored_dir):
+                    return token_id
+            # If monitored path is a directory, check if file is inside
+            elif normalized_path.startswith(monitored_path):
                 return token_id
         
         return None
@@ -202,6 +212,11 @@ class FSMonitor:
         self.observer = None
         self.handler = None
         self.is_running = False
+        
+        # File access time tracking
+        self.access_monitor_thread = None
+        self.last_access_times = {}  # Track last known access times for files
+        self.access_check_enabled = True  # Can be disabled for performance
     
     def add_watch_path(self, path: str, token_id: str):
         """
@@ -291,6 +306,14 @@ class FSMonitor:
         self.observer.start()
         self.is_running = True
         logger.info("✓ File system monitor started")
+        
+        # Start access time monitoring thread
+        self.access_monitor_thread = threading.Thread(
+            target=self._monitor_file_access,
+            daemon=True
+        )
+        self.access_monitor_thread.start()
+        logger.info("✓ File access monitor started")
     
     def stop(self):
         """Stop monitoring."""
@@ -303,6 +326,58 @@ class FSMonitor:
         
         self.is_running = False
         logger.info("✓ File system monitor stopped")
+    
+    def _monitor_file_access(self):
+        """
+        Background thread that monitors file access times.
+        Detects when files are accessed (read) by checking file access time (atime).
+        Only works on filesystems that track atime (most modern NTFS systems).
+        """
+        while self.is_running and self.access_check_enabled:
+            try:
+                for watch_path in self.watch_paths:
+                    path_obj = Path(watch_path)
+                    
+                    # Skip if path doesn't exist
+                    if not path_obj.exists():
+                        continue
+                    
+                    # Get current access time
+                    try:
+                        current_atime = os.path.getatime(watch_path)
+                    except (OSError, AttributeError):
+                        continue
+                    
+                    # Check if this is a new access
+                    if watch_path in self.last_access_times:
+                        last_atime = self.last_access_times[watch_path]
+                        # If access time changed, file was accessed
+                        if current_atime > last_atime:
+                            token_id = self.token_mapping.get(str(path_obj.resolve()))
+                            if token_id:
+                                event = MonitorEvent(
+                                    token_id=token_id,
+                                    path=watch_path,
+                                    event_type="accessed",
+                                    timestamp=time.time(),
+                                    is_directory=path_obj.is_dir(),
+                                    metadata={"atime_changed": True}
+                                )
+                                self.event_queue.put(event)
+                                if self.verbose:
+                                    logger.info(
+                                        f"🔍 File accessed: {watch_path} (token: {token_id})"
+                                    )
+                    
+                    # Update last access time
+                    self.last_access_times[watch_path] = current_atime
+                
+                # Check every 1 second
+                time.sleep(1)
+            
+            except Exception as e:
+                logger.error(f"File access monitor error: {e}")
+                time.sleep(5)  # Back off on error
     
     def run(self, duration: Optional[float] = None):
         """

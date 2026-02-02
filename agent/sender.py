@@ -140,8 +140,8 @@ class SecureSender:
             server_host: Server hostname/IP
             server_port: Server port
             ca_cert_path: Path to CA certificate
-            client_cert_path: Path to client certificate
-            client_key_path: Path to client private key
+            client_cert_path: Path to agent certificate
+            client_key_path: Path to agent private key
             rate_limit: Events per second limit
             burst_limit: Burst capacity
             reconnect_delay: Delay between reconnection attempts
@@ -177,7 +177,7 @@ class SecureSender:
         # Load CA certificate for server verification
         context.load_verify_locations(str(self.ca_cert_path))
         
-        # Load client certificate and key for mutual TLS
+        # Load agent certificate and key for mutual TLS
         context.load_cert_chain(
             certfile=str(self.client_cert_path),
             keyfile=str(self.client_key_path)
@@ -404,8 +404,8 @@ class SenderProcess:
             server_host: Server hostname/IP
             server_port: Server port
             ca_cert_path: Path to CA certificate
-            client_cert_path: Path to client certificate
-            client_key_path: Path to client private key
+            client_cert_path: Path to agent certificate
+            client_key_path: Path to agent private key
             heartbeat_interval: Seconds between heartbeats
         """
         self.event_queue = event_queue
