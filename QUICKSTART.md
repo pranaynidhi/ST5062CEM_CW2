@@ -18,7 +18,7 @@ cd "D:\College\ST5062CEM Programming and Algorithms 2\ST5062CEM_CW2"
 .venv\Scripts\activate
 
 # Install dependencies (already done)
-pip install cryptography watchdog pytest pytest-asyncio pytest-cov pylint black
+pip install -r requirements.txt
 
 # Generate SSL certificates (already done)
 python scripts\generate_certs.py
@@ -58,7 +58,7 @@ python gui_tk\app.py
 The dashboard window will open showing:
 
 - **Left Panel**: Network map with agent nodes
-- **Right Panel**: Alert list with recent events
+- **Right Panel**: Alerts and statistics tabs
 
 ### Step 3: Deploy an Agent
 
@@ -155,16 +155,22 @@ python gui_tk\alert_frame.py
 ### Alert Panel (Right Panel)
 
 - **Event list**: Chronological order (newest first)
+- **Search/Filter**: Filter by agent, token, type, or path
 - **Double-click event**: Show detailed information
 - **Export CSV**: Save events to file
 - **Clear**: Clear alert list
 - **Refresh**: Update from database
 
+### Statistics Tab (Right Panel)
+
+- **Overview**: Total agents, events, tokens, last 24h
+- **Breakdowns**: Event counts by agent, type, and token
+
 ### Menu Bar
 
 - **File** → Refresh Data, Exit
 - **View** → Refresh Agents, Clear Alerts
-- **Actions** → Database Statistics
+- **Actions** → Deploy Token, Database Statistics
 - **Help** → About
 
 ## 🔧 Configuration
