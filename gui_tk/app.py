@@ -17,11 +17,16 @@ from pathlib import Path
 # Add parent directory for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from utils.env_loader import load_env
+
 from server.db import DatabaseManager
 from gui_tk.map_frame import MapFrame
 from gui_tk.alert_frame import AlertFrame
 from gui_tk.stats_frame import StatsFrame
 from gui_tk.deploy_dialog import show_deploy_dialog
+
+# Load environment variables from .env if available
+load_env()
 
 
 class HoneyGridApp:

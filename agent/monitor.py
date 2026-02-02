@@ -74,7 +74,8 @@ class HoneytokenHandler(FileSystemEventHandler):
     
     def _get_token_id(self, path: str) -> Optional[str]:
         """Get token ID for a given path."""
-        normalized_path = str(Path(path).resolve())
+        normalized_path_obj = Path(path).resolve()
+        normalized_path = str(normalized_path_obj)
         
         # Direct match
         if normalized_path in self.normalized_mapping:
@@ -83,15 +84,18 @@ class HoneytokenHandler(FileSystemEventHandler):
         # Check if path is within a monitored directory or sibling of monitored file
         for monitored_path, token_id in self.normalized_mapping.items():
             monitored_path_obj = Path(monitored_path)
-            
+
             # If monitored path is a file, check if new file is in same directory
             if monitored_path_obj.is_file():
-                monitored_dir = str(monitored_path_obj.parent)
-                if normalized_path.startswith(monitored_dir):
+                if normalized_path_obj.parent == monitored_path_obj.parent:
                     return token_id
-            # If monitored path is a directory, check if file is inside
-            elif normalized_path.startswith(monitored_path):
-                return token_id
+            else:
+                # If monitored path is a directory, check if file is inside
+                try:
+                    if normalized_path_obj.is_relative_to(monitored_path_obj):
+                        return token_id
+                except ValueError:
+                    continue
         
         return None
     

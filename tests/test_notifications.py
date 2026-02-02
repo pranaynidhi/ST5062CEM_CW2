@@ -12,23 +12,40 @@ import os
 import time
 import pytest
 from server.notifiers import EmailNotifier, DiscordNotifier, Severity, NotificationConfig
+from utils.env_loader import load_env
+
+# Load environment variables from .env if available
+load_env()
 
 RUN_LIVE = os.getenv("HONEYGRID_RUN_LIVE_NOTIFICATIONS") == "1"
-SMTP_HOST = os.getenv("HONEYGRID_SMTP_HOST", "").strip()
-SMTP_PORT = os.getenv("HONEYGRID_SMTP_PORT", "587").strip()
-SMTP_USERNAME = os.getenv("HONEYGRID_SMTP_USERNAME", "").strip()
-SMTP_PASSWORD = os.getenv("HONEYGRID_SMTP_PASSWORD", "").strip()
-SMTP_FROM = os.getenv("HONEYGRID_SMTP_FROM", "").strip()
-SMTP_TO = os.getenv("HONEYGRID_SMTP_TO", "").strip()
+SMTP_HOST = os.getenv("HONEYGRID_SMTP_HOST", os.getenv("HONEYGRID_NOTIFICATIONS_EMAIL_SMTP_HOST"))
+SMTP_PORT = os.getenv("HONEYGRID_SMTP_PORT", os.getenv("HONEYGRID_NOTIFICATIONS_EMAIL_SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("HONEYGRID_SMTP_USERNAME", os.getenv("HONEYGRID_NOTIFICATIONS_EMAIL_SMTP_USERNAME"))
+SMTP_PASSWORD = os.getenv("HONEYGRID_SMTP_PASSWORD", os.getenv("HONEYGRID_NOTIFICATIONS_EMAIL_SMTP_PASSWORD"))
+SMTP_FROM = os.getenv("HONEYGRID_SMTP_FROM", os.getenv("HONEYGRID_NOTIFICATIONS_EMAIL_FROM_ADDRESS"))
+SMTP_TO = os.getenv("HONEYGRID_SMTP_TO", os.getenv("HONEYGRID_NOTIFICATIONS_EMAIL_TO_ADDRESSES"))
+
+
+def _is_pytest_run() -> bool:
+    return "PYTEST_CURRENT_TEST" in os.environ
+
+
+def _skip(reason: str) -> bool:
+    if _is_pytest_run():
+        pytest.skip(reason)
+    print(f"   ~ Skipped: {reason}")
+    return True
 
 @pytest.mark.asyncio
 async def test_discord_notifier():
     """Test Discord notifier (dry run)."""
     if not RUN_LIVE:
-        pytest.skip("Live Discord webhook test disabled. Set HONEYGRID_RUN_LIVE_NOTIFICATIONS=1 to enable.")
-    webhook_url = os.getenv("HONEYGRID_DISCORD_WEBHOOK", "").strip()
+        if _skip("Live Discord webhook test disabled. Set HONEYGRID_RUN_LIVE_NOTIFICATIONS=1 to enable."):
+            return
+    webhook_url = os.getenv("HONEYGRID_DISCORD_WEBHOOK", os.getenv("HONEYGRID_NOTIFICATIONS_DISCORD_WEBHOOK_URL"))
     if not webhook_url:
-        pytest.skip("No Discord webhook set. Set HONEYGRID_DISCORD_WEBHOOK to enable.")
+        if _skip("No Discord webhook set. Set HONEYGRID_DISCORD_WEBHOOK to enable."):
+            return
     print("\n4. Testing Discord Notifier...")
     config = NotificationConfig(enabled=True, rate_limit_seconds=0)
     # Create notifier (will not actually send without real webhook)
@@ -92,14 +109,16 @@ def test_notification_config():
 async def test_email_notifier():
     """Test email notifier (dry run)."""
     if not RUN_LIVE:
-        pytest.skip("Live SMTP test disabled. Set HONEYGRID_RUN_LIVE_NOTIFICATIONS=1 to enable.")
+        if _skip("Live SMTP test disabled. Set HONEYGRID_RUN_LIVE_NOTIFICATIONS=1 to enable."):
+            return
     print("\n3. Testing Email Notifier...")
     
     config = NotificationConfig(enabled=True, rate_limit_seconds=0)
     
     # Actually send a test message (requires valid SMTP config)
     if not SMTP_HOST or not SMTP_FROM or not SMTP_TO:
-        pytest.skip("Missing SMTP settings. Set HONEYGRID_SMTP_HOST/SMTP_FROM/SMTP_TO to enable.")
+        if _skip("Missing SMTP settings. Set HONEYGRID_SMTP_HOST/SMTP_FROM/SMTP_TO to enable."):
+            return
 
     notifier = EmailNotifier(
         config=config,
@@ -122,9 +141,6 @@ async def test_email_notifier():
     }
     result = await notifier.send(test_event)
     print(f"   ✓ Email message sent: {result}")
-
-
-
 
 async def main():
     """Run all tests."""
