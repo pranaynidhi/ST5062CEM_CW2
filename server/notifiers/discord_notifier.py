@@ -13,20 +13,22 @@ from .base import Notifier, NotificationConfig, Severity
 
 logger = logging.getLogger(__name__)
 
+
 class DiscordNotifier(Notifier):
     """
     Discord notification channel using webhooks.
     """
+
     def __init__(
         self,
         config: NotificationConfig,
         webhook_url: str,
         username: str = "HoneyGrid Bot",
-        avatar_url: Optional[str] = None
+        avatar_url: Optional[str] = None,
     ):
         """
         Initialize Discord notifier.
-        
+
         Args:
             config: Notification configuration
             webhook_url: Discord webhook URL
@@ -41,11 +43,11 @@ class DiscordNotifier(Notifier):
             logger.warning("No Discord webhook URL configured")
 
         self._severity_colors = {
-            Severity.INFO: 0x3498db,
-            Severity.LOW: 0x2ecc71,
-            Severity.MEDIUM: 0xf39c12,
-            Severity.HIGH: 0xe67e22,
-            Severity.CRITICAL: 0xe74c3c
+            Severity.INFO: 0x3498DB,
+            Severity.LOW: 0x2ECC71,
+            Severity.MEDIUM: 0xF39C12,
+            Severity.HIGH: 0xE67E22,
+            Severity.CRITICAL: 0xE74C3C,
         }
 
     async def send(self, event: Dict[str, Any]) -> bool:
@@ -80,14 +82,16 @@ class DiscordNotifier(Notifier):
                 async with session.post(
                     self.webhook_url,
                     json=payload,
-                    timeout=aiohttp.ClientTimeout(total=10)
+                    timeout=aiohttp.ClientTimeout(total=10),
                 ) as response:
                     if response.status in (200, 204):
                         logger.info("Discord notification sent successfully")
                         return True
                     else:
                         error_text = await response.text()
-                        logger.error(f"Discord webhook error {response.status}: {error_text}")
+                        logger.error(
+                            f"Discord webhook error {response.status}: {error_text}"
+                        )
                         return False
         except asyncio.TimeoutError:
             logger.error("Discord webhook timeout")
@@ -98,7 +102,7 @@ class DiscordNotifier(Notifier):
 
     def _get_embed_color(self, severity: Severity) -> int:
         """Return embed color for severity."""
-        return self._severity_colors.get(severity, 0x95a5a6)
+        return self._severity_colors.get(severity, 0x95A5A6)
 
     def _get_severity_emoji(self, severity: Severity) -> str:
         """Return emoji for severity."""
@@ -107,7 +111,7 @@ class DiscordNotifier(Notifier):
             Severity.LOW: "🟢",
             Severity.MEDIUM: "🟡",
             Severity.HIGH: "🟠",
-            Severity.CRITICAL: "🔴"
+            Severity.CRITICAL: "🔴",
         }
         return emoji_map.get(severity, "⚪")
 
@@ -121,12 +125,12 @@ class DiscordNotifier(Notifier):
 
     def _format_embed(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """Format Discord embed payload."""
-        agent_id = event.get('agent_id', 'Unknown')
-        token_id = event.get('token_id', 'Unknown')
-        path = event.get('path', 'Unknown')
-        event_type = event.get('event_type', 'Unknown')
-        timestamp = event.get('timestamp', time.time())
-        severity = event.get('severity')
+        agent_id = event.get("agent_id", "Unknown")
+        token_id = event.get("token_id", "Unknown")
+        path = event.get("path", "Unknown")
+        event_type = event.get("event_type", "Unknown")
+        timestamp = event.get("timestamp", time.time())
+        severity = event.get("severity")
         if severity is None:
             severity = Severity.from_event_type(event_type)
         color = self._get_embed_color(severity)
@@ -140,15 +144,31 @@ class DiscordNotifier(Notifier):
                 "name": "HoneyGrid Security Monitor",
             },
             "fields": [
-                {"name": "🧭 Agent", "value": self._safe_code_block(agent_id), "inline": True},
-                {"name": "🔖 Token", "value": self._safe_code_block(token_id), "inline": True},
-                {"name": "⚡ Event", "value": self._safe_code_block(event_type_label), "inline": True},
-                {"name": "🗂️ Path", "value": self._safe_code_block(path), "inline": False},
+                {
+                    "name": "🧭 Agent",
+                    "value": self._safe_code_block(agent_id),
+                    "inline": True,
+                },
+                {
+                    "name": "🔖 Token",
+                    "value": self._safe_code_block(token_id),
+                    "inline": True,
+                },
+                {
+                    "name": "⚡ Event",
+                    "value": self._safe_code_block(event_type_label),
+                    "inline": True,
+                },
+                {
+                    "name": "🗂️ Path",
+                    "value": self._safe_code_block(path),
+                    "inline": False,
+                },
             ],
-            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime(timestamp)),
-            "footer": {
-                "text": "HoneyGrid • Distributed Honeytoken Monitor"
-            }
+            "timestamp": time.strftime(
+                "%Y-%m-%dT%H:%M:%S.000Z", time.gmtime(timestamp)
+            ),
+            "footer": {"text": "HoneyGrid • Distributed Honeytoken Monitor"},
         }
         if self.avatar_url:
             embed["author"]["icon_url"] = self.avatar_url
@@ -157,10 +177,7 @@ class DiscordNotifier(Notifier):
 
     def _create_message(self, event: Dict[str, Any]) -> Dict[str, Any]:
         embed = self._format_embed(event)
-        payload = {
-            "username": self.username,
-            "embeds": [embed]
-        }
+        payload = {"username": self.username, "embeds": [embed]}
         if self.avatar_url:
             payload["avatar_url"] = self.avatar_url
         return payload
@@ -168,29 +185,39 @@ class DiscordNotifier(Notifier):
     def _create_batch_message(self, events: List[Dict[str, Any]]) -> Dict[str, Any]:
         severity_counts = {}
         for event in events:
-            event_type = event.get('event_type', '')
+            event_type = event.get("event_type", "")
             severity = Severity.from_event_type(event_type)
             severity_counts[severity] = severity_counts.get(severity, 0) + 1
 
         summary_fields = []
-        for severity in [Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.INFO]:
+        for severity in [
+            Severity.CRITICAL,
+            Severity.HIGH,
+            Severity.MEDIUM,
+            Severity.LOW,
+            Severity.INFO,
+        ]:
             count = severity_counts.get(severity, 0)
             if count > 0:
                 emoji = self._get_severity_emoji(severity)
-                summary_fields.append({
-                    "name": f"{emoji} {severity.name}",
-                    "value": self._safe_code_block(str(count)),
-                    "inline": True
-                })
+                summary_fields.append(
+                    {
+                        "name": f"{emoji} {severity.name}",
+                        "value": self._safe_code_block(str(count)),
+                        "inline": True,
+                    }
+                )
 
         event_lines = []
         for i, event in enumerate(events[:10], 1):
-            agent_id = event.get('agent_id', 'Unknown')
-            event_type = event.get('event_type', 'Unknown')
-            token_id = event.get('token_id', 'Unknown')
-            timestamp = event.get('timestamp', time.time())
-            time_str = time.strftime('%H:%M:%S', time.localtime(timestamp))
-            event_lines.append(f"{i}. `{time_str}` • {agent_id} • {event_type.upper()} • {token_id}")
+            agent_id = event.get("agent_id", "Unknown")
+            event_type = event.get("event_type", "Unknown")
+            token_id = event.get("token_id", "Unknown")
+            timestamp = event.get("timestamp", time.time())
+            time_str = time.strftime("%H:%M:%S", time.localtime(timestamp))
+            event_lines.append(
+                f"{i}. `{time_str}` • {agent_id} • {event_type.upper()} • {token_id}"
+            )
         if len(events) > 10:
             event_lines.append(f"... and {len(events) - 10} more events")
         events_text = "\n".join(event_lines)
@@ -198,26 +225,24 @@ class DiscordNotifier(Notifier):
         embed = {
             "title": f"📌 HoneyGrid Digest • {len(events)} Events",
             "description": "Summary by Severity and recent activity.",
-            "color": 0x2c3e50,
-            "fields": summary_fields + [
+            "color": 0x2C3E50,
+            "fields": summary_fields
+            + [
                 {
                     "name": "🧾 Recent Events",
                     "value": events_text or "No recent events",
-                    "inline": False
+                    "inline": False,
                 }
             ],
-            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime(time.time())),
-            "footer": {
-                "text": "HoneyGrid • Digest"
-            }
+            "timestamp": time.strftime(
+                "%Y-%m-%dT%H:%M:%S.000Z", time.gmtime(time.time())
+            ),
+            "footer": {"text": "HoneyGrid • Digest"},
         }
         if self.avatar_url:
             embed["thumbnail"] = {"url": self.avatar_url}
 
-        payload = {
-            "username": self.username,
-            "embeds": [embed]
-        }
+        payload = {"username": self.username, "embeds": [embed]}
         if self.avatar_url:
             payload["avatar_url"] = self.avatar_url
         return payload
