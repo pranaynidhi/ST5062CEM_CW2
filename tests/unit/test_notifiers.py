@@ -208,11 +208,13 @@ class TestDiscordNotifier:
         assert "color" in embed
         assert "fields" in embed
 
-        # Check that key info is in fields
+        # Check that key info is in fields (field names have emoji prefixes)
         fields = {f["name"]: f["value"] for f in embed["fields"]}
-        assert "Agent" in fields
-        assert "Token" in fields
-        assert "Event Type" in fields
+        # Fields have emoji prefixes like "🧭 Agent", "🔖 Token", etc.
+        field_names = set(fields.keys())
+        assert any("Agent" in name for name in field_names), f"Agent field not found in {field_names}"
+        assert any("Token" in name for name in field_names), f"Token field not found in {field_names}"
+        assert any("Event" in name for name in field_names), f"Event field not found in {field_names}"
 
     @pytest.mark.asyncio
     async def test_notify_disabled(self):

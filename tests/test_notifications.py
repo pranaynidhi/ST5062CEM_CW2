@@ -73,7 +73,7 @@ async def test_discord_notifier():
     print("\n4. Testing Discord Notifier...")
     config = NotificationConfig(enabled=True, rate_limit_seconds=0)
     # Create notifier (will not actually send without real webhook)
-    notifier = DiscordNotifier(config=config, webhook_url=webhook_url, username="File")
+    notifier = DiscordNotifier(config=config, webhook_url=webhook_url, username="HoneyGrid Bot")
     print("   ✓ DiscordNotifier instantiated")
     print(f"   ✓ Webhook URL: {notifier.webhook_url[:40]}...")
     print(f"   ✓ Username: {notifier.username}")
