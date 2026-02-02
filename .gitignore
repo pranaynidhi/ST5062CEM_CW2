@@ -222,3 +222,4 @@ test_tokens/
 config.local.py
 IMPLEMENTATION_PLAN.md
 .github/*.md
+server/config.yaml

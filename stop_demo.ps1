@@ -15,7 +15,7 @@
 
 Write-Host ""
 Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║            HoneyGrid - Demo Environment Stopper           ║" -ForegroundColor Cyan
+Write-Host "║            HoneyGrid - Demo Environment Stopper            ║" -ForegroundColor Cyan
 Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 

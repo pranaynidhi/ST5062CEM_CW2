@@ -25,7 +25,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $scriptDir
 
 Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║           HoneyGrid - Demo Environment Launcher           ║" -ForegroundColor Cyan
+Write-Host "║           HoneyGrid - Demo Environment Launcher            ║" -ForegroundColor Cyan
 Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
@@ -126,7 +126,7 @@ $agent1Process = Start-Process python -ArgumentList @(
 ) -NoNewWindow -PassThru
 
 Write-Host "  Agent agent-001 (monitoring db_password.txt) - PID: $($agent1Process.Id)" -ForegroundColor DarkGreen
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 2
 
 # Agent 2 (uses auto-generated agent-002 cert)
 $agent2Process = Start-Process python -ArgumentList @(
@@ -139,7 +139,7 @@ $agent2Process = Start-Process python -ArgumentList @(
 ) -NoNewWindow -PassThru
 
 Write-Host "  Agent agent-002 (monitoring roadmap.txt) - PID: $($agent2Process.Id)" -ForegroundColor DarkGreen
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 2
 
 # Agent 3 (uses auto-generated agent-003 cert)
 $agent3Process = Start-Process python -ArgumentList @(
@@ -152,6 +152,7 @@ $agent3Process = Start-Process python -ArgumentList @(
 ) -NoNewWindow -PassThru
 
 Write-Host "  Agent agent-003 (monitoring config.env) - PID: $($agent3Process.Id)" -ForegroundColor DarkGreen
+Start-Sleep -Seconds 2
 
 # Summary
 Write-Host ""
@@ -167,35 +168,37 @@ Write-Host ""
 Write-Host "📝 Demo Actions:" -ForegroundColor Yellow
 Write-Host "  Open another PowerShell window and try these commands:" -ForegroundColor DarkYellow
 Write-Host ""
-Write-Host "  🔍 TEST FILE MODIFICATION (Add-Content):" -ForegroundColor Cyan
-Write-Host "     Add-Content '$honeytokenDir\db_password.txt' 'BREACH DETECTED'" -ForegroundColor Gray
-Write-Host "     → Should trigger MODIFIED event in GUI" -ForegroundColor DarkGreen
+Write-Host "🔍 TEST FILE MODIFICATION (Add-Content):" -ForegroundColor Cyan
+Write-Host "Add-Content '$honeytokenDir\db_password.txt' 'BREACH DETECTED'" -ForegroundColor Gray
+Write-Host " → Should trigger MODIFIED event in GUI" -ForegroundColor DarkGreen
 Write-Host ""
-Write-Host "  📖 TEST FILE ACCESS (Get-Content):" -ForegroundColor Cyan
-Write-Host "     Get-Content '$honeytokenDir\roadmap.txt'" -ForegroundColor Gray
-Write-Host "     → Should trigger ACCESSED event in GUI" -ForegroundColor DarkGreen
+Write-Host "📖 TEST FILE ACCESS (Get-Content):" -ForegroundColor Cyan
+Write-Host "Get-Content '$honeytokenDir\roadmap.txt'" -ForegroundColor Gray
+Write-Host " → Should trigger ACCESSED event in GUI" -ForegroundColor DarkGreen
 Write-Host ""
-Write-Host "  ➕ TEST FILE CREATION:" -ForegroundColor Cyan
-Write-Host "     New-Item -Path '$honeytokenDir\new_secret.txt' -ItemType File" -ForegroundColor Gray
-Write-Host "     → Should trigger CREATED event in GUI" -ForegroundColor DarkGreen
+Write-Host "➕ TEST FILE CREATION:" -ForegroundColor Cyan
+Write-Host "New-Item -Path '$honeytokenDir\new_secret.txt' -ItemType File" -ForegroundColor Gray
+Write-Host " → Should trigger CREATED event in GUI" -ForegroundColor DarkGreen
 Write-Host ""
-Write-Host "  ❌ TEST FILE DELETION:" -ForegroundColor Cyan
-Write-Host "     Remove-Item '$honeytokenDir\config.env'" -ForegroundColor Gray
-Write-Host "     → Should trigger DELETED event in GUI" -ForegroundColor DarkGreen
+Write-Host "❌ TEST FILE DELETION:" -ForegroundColor Cyan
+Write-Host "Remove-Item '$honeytokenDir\config.env'" -ForegroundColor Gray
+Write-Host " → Should trigger DELETED event in GUI" -ForegroundColor DarkGreen
 Write-Host ""
-Write-Host "  ✏️  TEST FILE RENAME:" -ForegroundColor Cyan
-Write-Host "     Rename-Item '$honeytokenDir\db_password.txt' 'db_password_backup.txt'" -ForegroundColor Gray
-Write-Host "     → Should trigger MOVED event in GUI" -ForegroundColor DarkGreen
+Write-Host " ✏️  TEST FILE RENAME:" -ForegroundColor Cyan
+Write-Host "Rename-Item '$honeytokenDir\db_password.txt' 'db_password_backup.txt'" -ForegroundColor Gray
+Write-Host " → Should trigger MOVED event in GUI" -ForegroundColor DarkGreen
 Write-Host ""
-Write-Host "  ⏱️  BULK TEST (rapid modifications):" -ForegroundColor Cyan
-Write-Host "     for (\`$i = 0; \`$i -lt 5; \`$i++) { Add-Content '$honeytokenDir\roadmap.txt' \"Edit \`$i\" }" -ForegroundColor Gray
-Write-Host "     → Should trigger multiple MODIFIED events" -ForegroundColor DarkGreen
+Write-Host "⏱️  BULK TEST (rapid modifications):" -ForegroundColor Cyan
+$bulkCmd = 'for (`$i = 0; `$i -lt 5; `$i++) { Add-Content "__PATH__" "Edit `$i" }'
+$bulkCmd = $bulkCmd.Replace('__PATH__', "$honeytokenDir\roadmap.txt")
+Write-Host $bulkCmd -ForegroundColor Gray
+Write-Host " → Should trigger multiple MODIFIED events" -ForegroundColor DarkGreen
 Write-Host ""
-Write-Host "  💡 Watch the GUI dashboard for real-time alerts!" -ForegroundColor Yellow
+Write-Host "💡 Watch the GUI dashboard for real-time alerts!" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "🛑 To Stop:" -ForegroundColor Yellow
-Write-Host "  Press Ctrl+C in any window, or run:" -ForegroundColor DarkYellow
-Write-Host "  .\stop_demo.ps1" -ForegroundColor Gray
+Write-Host "Press Ctrl+C in any window, or run:" -ForegroundColor DarkYellow
+Write-Host ".\stop_demo.ps1" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Process IDs for monitoring:" -ForegroundColor Cyan
 Write-Host "  Server: $($serverProcess.Id)" -ForegroundColor Gray

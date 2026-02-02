@@ -100,6 +100,25 @@ class DiscordNotifier(Notifier):
         """Return embed color for severity."""
         return self._severity_colors.get(severity, 0x95a5a6)
 
+    def _get_severity_emoji(self, severity: Severity) -> str:
+        """Return emoji for severity."""
+        emoji_map = {
+            Severity.INFO: "ℹ️",
+            Severity.LOW: "🟢",
+            Severity.MEDIUM: "🟡",
+            Severity.HIGH: "🟠",
+            Severity.CRITICAL: "🔴"
+        }
+        return emoji_map.get(severity, "⚪")
+
+    def _safe_code_block(self, value: str, max_len: int = 1000) -> str:
+        """Format a value in a code block with length guard."""
+        if value is None:
+            value = ""
+        if len(value) > max_len:
+            value = value[: max_len - 3] + "..."
+        return f"`{value}`"
+
     def _format_embed(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """Format Discord embed payload."""
         agent_id = event.get('agent_id', 'Unknown')
@@ -111,18 +130,29 @@ class DiscordNotifier(Notifier):
         if severity is None:
             severity = Severity.from_event_type(event_type)
         color = self._get_embed_color(severity)
+        severity_emoji = self._get_severity_emoji(severity)
+        event_type_label = event_type.upper()
         embed = {
-            "title": f"HoneyGrid Alert - {severity.name}",
+            "title": f"{severity_emoji} HoneyGrid Alert • {severity.name}",
             "description": f"A honeytoken was triggered by agent **{agent_id}**.",
             "color": color,
+            "author": {
+                "name": "HoneyGrid Security Monitor",
+            },
             "fields": [
-                {"name": "Agent", "value": agent_id, "inline": True},
-                {"name": "Token", "value": token_id, "inline": True},
-                {"name": "Event Type", "value": event_type, "inline": True},
-                {"name": "Path", "value": f"`{path}`", "inline": False}
+                {"name": "🧭 Agent", "value": self._safe_code_block(agent_id), "inline": True},
+                {"name": "🔖 Token", "value": self._safe_code_block(token_id), "inline": True},
+                {"name": "⚡ Event", "value": self._safe_code_block(event_type_label), "inline": True},
+                {"name": "🗂️ Path", "value": self._safe_code_block(path), "inline": False},
             ],
-            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime(timestamp))
+            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime(timestamp)),
+            "footer": {
+                "text": "HoneyGrid • Distributed Honeytoken Monitor"
+            }
         }
+        if self.avatar_url:
+            embed["author"]["icon_url"] = self.avatar_url
+            embed["thumbnail"] = {"url": self.avatar_url}
         return embed
 
     def _create_message(self, event: Dict[str, Any]) -> Dict[str, Any]:
@@ -141,12 +171,18 @@ class DiscordNotifier(Notifier):
             event_type = event.get('event_type', '')
             severity = Severity.from_event_type(event_type)
             severity_counts[severity] = severity_counts.get(severity, 0) + 1
-        summary_lines = []
+
+        summary_fields = []
         for severity in [Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.INFO]:
             count = severity_counts.get(severity, 0)
             if count > 0:
-                summary_lines.append(f"{severity.name}: {count}")
-        summary_text = "\n".join(summary_lines)
+                emoji = self._get_severity_emoji(severity)
+                summary_fields.append({
+                    "name": f"{emoji} {severity.name}",
+                    "value": self._safe_code_block(str(count)),
+                    "inline": True
+                })
+
         event_lines = []
         for i, event in enumerate(events[:10], 1):
             agent_id = event.get('agent_id', 'Unknown')
@@ -154,16 +190,30 @@ class DiscordNotifier(Notifier):
             token_id = event.get('token_id', 'Unknown')
             timestamp = event.get('timestamp', time.time())
             time_str = time.strftime('%H:%M:%S', time.localtime(timestamp))
-            event_lines.append(f"{i}. `{time_str}` - {agent_id} - {event_type.upper()} - {token_id}")
+            event_lines.append(f"{i}. `{time_str}` • {agent_id} • {event_type.upper()} • {token_id}")
         if len(events) > 10:
             event_lines.append(f"... and {len(events) - 10} more events")
         events_text = "\n".join(event_lines)
+
         embed = {
-            "title": f"HoneyGrid Alert Digest - {len(events)} Events",
-            "description": f"Summary by Severity:\n{summary_text}\n\nRecent Events:\n{events_text}",
+            "title": f"📌 HoneyGrid Digest • {len(events)} Events",
+            "description": "Summary by Severity and recent activity.",
             "color": 0x2c3e50,
-            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime(time.time()))
+            "fields": summary_fields + [
+                {
+                    "name": "🧾 Recent Events",
+                    "value": events_text or "No recent events",
+                    "inline": False
+                }
+            ],
+            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime(time.time())),
+            "footer": {
+                "text": "HoneyGrid • Digest"
+            }
         }
+        if self.avatar_url:
+            embed["thumbnail"] = {"url": self.avatar_url}
+
         payload = {
             "username": self.username,
             "embeds": [embed]

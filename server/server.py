@@ -248,7 +248,11 @@ class ClientHandler:
             
             for notifier in self.notifiers:
                 try:
-                    await notifier.notify(event_data)
+                    sent = await notifier.notify(event_data)
+                    logger.info(
+                        f"[{self.agent_id}] Notification via {notifier.__class__.__name__}: "
+                        f"{'sent' if sent else 'skipped'}"
+                    )
                 except Exception as e:
                     logger.error(f"Notification failed: {e}")
             
@@ -579,19 +583,34 @@ class HoneyGridServer:
 async def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="HoneyGrid Server")
-    parser.add_argument("--host", default="0.0.0.0", help="Bind address")
-    parser.add_argument("--port", type=int, default=9000, help="Bind port")
-    parser.add_argument("--db", default="data/honeygrid.db", help="Database path")
-    parser.add_argument("--db-password", default="change_this_password", help="Database password")
+    parser.add_argument("--host", default=None, help="Bind address")
+    parser.add_argument("--port", type=int, default=None, help="Bind port")
+    parser.add_argument("--db", default=None, help="Database path")
+    parser.add_argument("--db-password", default=None, help="Database password")
     
     args = parser.parse_args()
+
+    # Load configuration (YAML + env overrides)
+    # Try to load config.yaml first, fall back to defaults
+    config = load_config("server/config.yaml", DEFAULT_SERVER_CONFIG)
+
+    # Resolve settings with CLI overrides
+    host = args.host or get_nested_value(config, "server.host", "0.0.0.0")
+    port = args.port or get_nested_value(config, "server.port", 9000)
+    db_path = args.db or get_nested_value(config, "server.database.path", "data/honeygrid.db")
+    db_password = args.db_password or get_nested_value(
+        config,
+        "server.database.password",
+        "change_this_password"
+    )
     
     # Create server
     server = HoneyGridServer(
-        host=args.host,
-        port=args.port,
-        db_path=args.db,
-        db_password=args.db_password
+        host=host,
+        port=port,
+        db_path=db_path,
+        db_password=db_password,
+        config=config
     )
     
     try:
