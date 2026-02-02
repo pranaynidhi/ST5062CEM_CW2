@@ -67,35 +67,46 @@ class AlertFrame(ttk.Frame):
         search_frame = ttk.LabelFrame(self, text="Search/Filter Events", padding="5")
         search_frame.pack(fill=tk.X, padx=5, pady=2)
 
+        # Agent dropdown
         ttk.Label(search_frame, text="Agent:").grid(row=0, column=0, sticky=tk.W)
-        agent_entry = ttk.Entry(
-            search_frame, textvariable=self.search_vars["agent"], width=12
+        self.agent_combo = ttk.Combobox(
+            search_frame, textvariable=self.search_vars["agent"], width=12, state="readonly"
         )
-        agent_entry.grid(row=0, column=1, padx=2)
+        self.agent_combo.grid(row=0, column=1, padx=2)
+        self.agent_combo.bind("<<ComboboxSelected>>", lambda e: self.apply_filter())
 
+        # Token dropdown
         ttk.Label(search_frame, text="Token:").grid(row=0, column=2, sticky=tk.W)
-        token_entry = ttk.Entry(
-            search_frame, textvariable=self.search_vars["token"], width=12
+        self.token_combo = ttk.Combobox(
+            search_frame, textvariable=self.search_vars["token"], width=12, state="readonly"
         )
-        token_entry.grid(row=0, column=3, padx=2)
+        self.token_combo.grid(row=0, column=3, padx=2)
+        self.token_combo.bind("<<ComboboxSelected>>", lambda e: self.apply_filter())
 
+        # Type dropdown
         ttk.Label(search_frame, text="Type:").grid(row=0, column=4, sticky=tk.W)
-        type_entry = ttk.Entry(
-            search_frame, textvariable=self.search_vars["type"], width=10
+        self.type_combo = ttk.Combobox(
+            search_frame, textvariable=self.search_vars["type"], width=10, 
+            values=["", "created", "modified", "deleted", "moved", "opened", "accessed"],
+            state="readonly"
         )
-        type_entry.grid(row=0, column=5, padx=2)
+        self.type_combo.grid(row=0, column=5, padx=2)
+        self.type_combo.bind("<<ComboboxSelected>>", lambda e: self.apply_filter())
 
+        # Path text entry
         ttk.Label(search_frame, text="Path:").grid(row=0, column=6, sticky=tk.W)
         path_entry = ttk.Entry(
             search_frame, textvariable=self.search_vars["path"], width=18
         )
         path_entry.grid(row=0, column=7, padx=2)
-
-        search_btn = ttk.Button(search_frame, text="Apply", command=self.apply_filter)
-        search_btn.grid(row=0, column=8, padx=4)
+        path_entry.bind("<KeyRelease>", lambda e: self.apply_filter())
 
         clear_btn = ttk.Button(search_frame, text="Reset", command=self.clear_filter)
-        clear_btn.grid(row=0, column=9, padx=2)
+        clear_btn.grid(row=0, column=8, padx=4)
+
+        # Sorting state
+        self.sort_column = None
+        self.sort_order = "normal"  # normal, ascending, descending
 
         # Auto-apply filter on text change
         for var in self.search_vars.values():
@@ -121,12 +132,21 @@ class AlertFrame(ttk.Frame):
         vsb.config(command=self.tree.yview)
         hsb.config(command=self.tree.xview)
 
-        # Column headings
-        self.tree.heading("time", text="Time")
-        self.tree.heading("agent", text="Agent")
-        self.tree.heading("token", text="Token")
-        self.tree.heading("type", text="Type")
-        self.tree.heading("path", text="Path")
+        # Store original header names
+        self.header_names = {
+            "time": "Time",
+            "agent": "Agent",
+            "token": "Token",
+            "type": "Type",
+            "path": "Path"
+        }
+
+        # Column headings with sorting
+        self.tree.heading("time", text="Time", command=lambda: self._sort_column("time"))
+        self.tree.heading("agent", text="Agent", command=lambda: self._sort_column("agent"))
+        self.tree.heading("token", text="Token", command=lambda: self._sort_column("token"))
+        self.tree.heading("type", text="Type", command=lambda: self._sort_column("type"))
+        self.tree.heading("path", text="Path", command=lambda: self._sort_column("path"))
 
         # Column widths
         self.tree.column("time", width=150)
@@ -166,30 +186,84 @@ class AlertFrame(ttk.Frame):
             # Get recent events
             self.events = self.db.get_recent_events(limit=100)
 
+            # Update dropdown options
+            self._update_filter_dropdowns()
+
             # Apply current filter
             self.apply_filter()
 
         except Exception as e:
             print(f"Failed to refresh events: {e}")
 
+    def _update_filter_dropdowns(self):
+        """Update filter dropdown values from current events."""
+        # Extract unique agents and tokens
+        agents = sorted(set(e.get("agent_id", "Unknown") for e in self.events if e.get("agent_id")))
+        tokens = sorted(set(e.get("token_id", "Unknown") for e in self.events if e.get("token_id")))
+        
+        # Update combobox values (prepend empty string for "no filter")
+        self.agent_combo["values"] = [""] + agents
+        self.token_combo["values"] = [""] + tokens
+
     def apply_filter(self):
         """Apply search/filter to events."""
-        agent = self.search_vars["agent"].get().strip().lower()
-        token = self.search_vars["token"].get().strip().lower()
-        typ = self.search_vars["type"].get().strip().lower()
-        path = self.search_vars["path"].get().strip().lower()
+        # Parse multi-value filters (comma or semicolon separated)
+        agent_filter = [x.strip().lower() for x in self.search_vars["agent"].get().split(",") if x.strip()]
+        token_filter = [x.strip().lower() for x in self.search_vars["token"].get().split(",") if x.strip()]
+        typ_filter = [x.strip().lower() for x in self.search_vars["type"].get().split(",") if x.strip()]
+        path_filter = [x.strip().lower() for x in self.search_vars["path"].get().split(",") if x.strip()]
 
         def match(event):
-            return (
-                (not agent or agent in str(event.get("agent_id", "")).lower())
-                and (not token or token in str(event.get("token_id", "")).lower())
-                and (not typ or typ in str(event.get("event_type", "")).lower())
-                and (not path or path in str(event.get("path", "")).lower())
-            )
+            # If filter is empty, match all
+            agent_match = (not agent_filter or 
+                          any(a in str(event.get("agent_id", "")).lower() for a in agent_filter))
+            token_match = (not token_filter or 
+                          any(t in str(event.get("token_id", "")).lower() for t in token_filter))
+            typ_match = (not typ_filter or 
+                        any(ty in str(event.get("event_type", "")).lower() for ty in typ_filter))
+            path_match = (not path_filter or 
+                         any(p in str(event.get("path", "")).lower() for p in path_filter))
+            
+            return agent_match and token_match and typ_match and path_match
 
         self.filtered_events = [e for e in self.events if match(e)]
         self._populate_tree()
         self.count_label.config(text=f"Events: {len(self.filtered_events)}")
+
+    def _sort_column(self, column):
+        """Handle column sorting with cycling through: normal -> ascending -> descending -> normal."""
+        # Cycle sort order
+        if self.sort_column == column:
+            if self.sort_order == "normal":
+                self.sort_order = "ascending"
+            elif self.sort_order == "ascending":
+                self.sort_order = "descending"
+            else:
+                self.sort_order = "normal"
+        else:
+            self.sort_column = column
+            self.sort_order = "ascending"
+        
+        # Update header text with sort indicator
+        self._update_header_labels()
+        self._populate_tree()
+
+    def _update_header_labels(self):
+        """Update header labels with sort indicators."""
+        # Sort indicators
+        indicators = {
+            "ascending": " ↑",
+            "descending": " ↓",
+            "normal": ""
+        }
+        
+        for col in ["time", "agent", "token", "type", "path"]:
+            base_name = self.header_names[col]
+            if col == self.sort_column:
+                indicator = indicators[self.sort_order]
+                self.tree.heading(col, text=f"{base_name}{indicator}")
+            else:
+                self.tree.heading(col, text=base_name)
 
     def clear_filter(self):
         """Clear all search filters."""
@@ -209,7 +283,22 @@ class AlertFrame(ttk.Frame):
         )
         self.display_events = events_to_display
 
-        # Add events (most recent first)
+        # Apply sorting if configured
+        if self.sort_column and self.sort_order != "normal":
+            # Define sort key based on column
+            sort_keys = {
+                "time": lambda e: e.get("timestamp", 0),
+                "agent": lambda e: e.get("agent_id", ""),
+                "token": lambda e: e.get("token_id", ""),
+                "type": lambda e: e.get("event_type", ""),
+                "path": lambda e: e.get("path", ""),
+            }
+            
+            sort_key_func = sort_keys.get(self.sort_column, lambda e: e.get("timestamp", 0))
+            reverse = (self.sort_order == "descending")
+            events_to_display = sorted(events_to_display, key=sort_key_func, reverse=reverse)
+
+        # Add events
         for event in events_to_display:
             # Format timestamp
             timestamp = event.get("timestamp", 0)
