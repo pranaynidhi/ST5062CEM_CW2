@@ -45,10 +45,17 @@ class TestConfigLoader:
             temp_path = f.name
 
         try:
-            config = load_config(temp_path)
-            assert config["server"]["host"] == "127.0.0.1"
-            assert config["server"]["port"] == 8000
-            assert config["notifications"]["enabled"] is True
+            # Save and clear environment variable that might override values
+            old_host = os.environ.pop("HONEYGRID_SERVER_HOST", None)
+            try:
+                config = load_config(temp_path)
+                assert config["server"]["host"] == "127.0.0.1"
+                assert config["server"]["port"] == 8000
+                assert config["notifications"]["enabled"] is True
+            finally:
+                # Restore environment variable
+                if old_host is not None:
+                    os.environ["HONEYGRID_SERVER_HOST"] = old_host
         finally:
             os.unlink(temp_path)
 

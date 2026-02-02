@@ -24,11 +24,14 @@ from agent.sender import SecureSender
 # Test configuration
 TEST_HOST = "127.0.0.1"
 TEST_PORT = 19000  # Use different port to avoid conflicts
-TEST_CA_CERT = "certs/ca.crt"
-TEST_SERVER_CERT = "certs/server.crt"
-TEST_SERVER_KEY = "certs/server.key"
-TEST_CLIENT_CERT = "certs/client_client-001.crt"
-TEST_CLIENT_KEY = "certs/client_client-001.key"
+
+# Use absolute paths for certificates (multiprocessing needs this)
+TEST_CERT_DIR = Path(__file__).parent.parent.parent / "certs"
+TEST_CA_CERT = str(TEST_CERT_DIR / "ca.crt")
+TEST_SERVER_CERT = str(TEST_CERT_DIR / "server.crt")
+TEST_SERVER_KEY = str(TEST_CERT_DIR / "server.key")
+TEST_CLIENT_CERT = str(TEST_CERT_DIR / "client_agent-001.crt")
+TEST_CLIENT_KEY = str(TEST_CERT_DIR / "client_agent-001.key")
 
 
 @pytest.fixture

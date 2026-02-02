@@ -251,7 +251,13 @@ class TestAlertFrameSorting(unittest.TestCase):
     """Test alert frame sorting functionality."""
 
     def setUp(self):
-        """Set up test fixtures."""
+        """Set up test fixtures."""        # Skip if Tkinter not available (CI environment)
+        try:
+            # Test if Tkinter can initialize
+            test_root = tk.Tk()
+            test_root.destroy()
+        except Exception as e:
+            self.skipTest(f"Tkinter not available: {e}")
         # Create test database
         self.temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
         self.temp_file.close()
