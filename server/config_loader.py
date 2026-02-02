@@ -208,7 +208,8 @@ DEFAULT_SERVER_CONFIG = {
             "smtp_password": "",
             "from_address": "honeygrid@example.com",
             "to_addresses": [],
-            "use_tls": True
+            "use_tls": True,
+            "logo_url": ""
         },
         "discord": {
             "enabled": False,

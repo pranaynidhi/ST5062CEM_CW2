@@ -41,6 +41,7 @@ notifications:
       - "security-team@example.com"
       - "admin@example.com"
     use_tls: true
+    logo_url: ""
 
   # Discord notifications
   discord:

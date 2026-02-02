@@ -417,7 +417,8 @@ class HoneyGridServer:
                     smtp_password=email_config.get('smtp_password', ''),
                     from_address=email_config.get('from_address', 'honeygrid@example.com'),
                     to_addresses=email_config.get('to_addresses', []),
-                    use_tls=email_config.get('use_tls', True)
+                    use_tls=email_config.get('use_tls', True),
+                    logo_url=email_config.get('logo_url', None)
                 )
                 notifiers.append(email_notifier)
                 logger.info(f"✓ Email notifications enabled ({len(email_notifier.to_addresses)} recipients)")

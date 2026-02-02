@@ -65,6 +65,14 @@ class HoneyGridApp:
             self.root.iconbitmap("assets/icon.ico")
         except:
             pass
+        try:
+            icon_path = Path("assets") / "honeygrid.png"
+            if icon_path.exists():
+                icon_image = tk.PhotoImage(file=str(icon_path))
+                self.root.iconphoto(True, icon_image)
+                self._icon_image = icon_image
+        except:
+            pass
         
         # Style
         self.style = ttk.Style()
