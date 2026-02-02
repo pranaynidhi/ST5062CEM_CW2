@@ -1,0 +1,50 @@
+# HoneyGrid Agent Configuration
+# This file configures an individual agent's behavior
+
+agent:
+  # Unique identifier for this agent
+  agent_id: "agent-001"
+
+  # Server connection settings
+  server:
+    host: "192.168.1.100"
+    port: 9000
+
+  # TLS/SSL Configuration
+  certificates:
+    ca_cert: "certs/ca.crt"
+    client_cert: "certs/client_agent-001.crt"
+    client_key: "certs/client_agent-001.key"
+
+  # Monitoring configuration
+  monitoring:
+    # Watch paths and their token IDs
+    watch_paths:
+      - path: "C:\\honeytokens\\secret.docx"
+        token_id: "token-001"
+        recursive: false
+
+      - path: "C:\\honeytokens\\financial"
+        token_id: "token-002"
+        recursive: true
+
+      - path: "/home/user/honeytokens/passwords.txt"
+        token_id: "token-003"
+        recursive: false
+
+    # Event rate limiting
+    rate_limit:
+      max_events_per_second: 10
+      burst_size: 20
+
+  # Heartbeat configuration
+  heartbeat:
+    interval_seconds: 30
+    timeout_seconds: 10
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  file: "logs/agent_{agent_id}.log"
+  max_bytes: 5242880 # 5 MB
+  backup_count: 3
