@@ -9,9 +9,9 @@ from .email_notifier import EmailNotifier
 from .discord_notifier import DiscordNotifier
 
 __all__ = [
-    'Notifier',
-    'NotificationConfig',
-    'Severity',
-    'EmailNotifier',
-    'DiscordNotifier'
+    "Notifier",
+    "NotificationConfig",
+    "Severity",
+    "EmailNotifier",
+    "DiscordNotifier",
 ]

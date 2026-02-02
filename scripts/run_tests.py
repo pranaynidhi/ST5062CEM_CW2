@@ -16,7 +16,7 @@ load_env()
 def run_tests(test_paths=None, coverage=True, verbose=True, html=True):
     """
     Run pytest with optional coverage.
-    
+
     Args:
         test_paths: List of test paths or single path (default: all tests)
         coverage: Enable coverage reporting
@@ -24,7 +24,7 @@ def run_tests(test_paths=None, coverage=True, verbose=True, html=True):
         html: Generate HTML coverage report
     """
     cmd = [sys.executable, "-m", "pytest"]
-    
+
     # Add test paths
     if test_paths:
         if isinstance(test_paths, str):
@@ -32,94 +32,74 @@ def run_tests(test_paths=None, coverage=True, verbose=True, html=True):
         cmd.extend(test_paths)
     else:
         cmd.append("tests/")
-    
+
     # Add verbosity
     if verbose:
         cmd.append("-v")
     else:
         cmd.append("-q")
-    
+
     # Add coverage
     if coverage:
-        cmd.extend([
-            "--cov=agent",
-            "--cov=server",
-            "--cov=gui_tk",
-            "--cov-report=term"
-        ])
-        
+        cmd.extend(["--cov=agent", "--cov=server", "--cov=gui_tk", "--cov-report=term"])
+
         if html:
             cmd.append("--cov-report=html:coverage_html")
-    
+
     # Run tests
     print(f"Running: {' '.join(cmd)}")
     print()
     result = subprocess.run(cmd)
-    
+
     return result.returncode
 
 
 def main():
     """Main entry point."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="Run HoneyGrid tests with coverage reporting"
     )
     parser.add_argument(
-        "paths",
-        nargs="*",
-        default=None,
-        help="Test paths (default: all tests)"
+        "paths", nargs="*", default=None, help="Test paths (default: all tests)"
     )
     parser.add_argument(
-        "--no-coverage",
-        action="store_true",
-        help="Disable coverage reporting"
+        "--no-coverage", action="store_true", help="Disable coverage reporting"
     )
     parser.add_argument(
-        "--no-html",
-        action="store_true",
-        help="Disable HTML coverage report"
+        "--no-html", action="store_true", help="Disable HTML coverage report"
     )
     parser.add_argument(
-        "-q", "--quiet",
-        action="store_true",
-        help="Quiet output (less verbose)"
+        "-q", "--quiet", action="store_true", help="Quiet output (less verbose)"
     )
+    parser.add_argument("--unit", action="store_true", help="Run only unit tests")
     parser.add_argument(
-        "--unit",
-        action="store_true",
-        help="Run only unit tests"
+        "--integration", action="store_true", help="Run only integration tests"
     )
-    parser.add_argument(
-        "--integration",
-        action="store_true",
-        help="Run only integration tests"
-    )
-    
+
     args = parser.parse_args()
-    
+
     # Check if pytest is available
     try:
         subprocess.run(
             [sys.executable, "-m", "pytest", "--version"],
             capture_output=True,
-            check=True
+            check=True,
         )
     except subprocess.CalledProcessError:
         print("ERROR: pytest is not installed!")
         print("Install with: pip install pytest pytest-cov")
         return 1
-    
+
     # Determine test paths
     test_paths = args.paths if args.paths else None
-    
+
     if args.unit:
         test_paths = ["tests/unit/"]
     elif args.integration:
         test_paths = ["tests/integration/"]
-    
+
     # Run tests
     print("=" * 70)
     if test_paths:
@@ -128,14 +108,14 @@ def main():
         print("Running all tests...")
     print("=" * 70)
     print()
-    
+
     exit_code = run_tests(
         test_paths=test_paths,
         coverage=not args.no_coverage,
         verbose=not args.quiet,
-        html=not args.no_html
+        html=not args.no_html,
     )
-    
+
     print()
     if exit_code == 0:
         print("=" * 70)
@@ -147,7 +127,7 @@ def main():
         print("=" * 70)
         print("✗ Some tests failed!")
         print("=" * 70)
-    
+
     return exit_code
 
 

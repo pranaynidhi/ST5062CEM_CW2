@@ -28,19 +28,21 @@ def save_private_key(key, filepath, password=None):
     encryption = serialization.NoEncryption()
     if password:
         encryption = serialization.BestAvailableEncryption(password.encode())
-    
-    with open(filepath, 'wb') as f:
-        f.write(key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=encryption
-        ))
+
+    with open(filepath, "wb") as f:
+        f.write(
+            key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=encryption,
+            )
+        )
     print(f"✓ Saved private key: {filepath}")
 
 
 def save_certificate(cert, filepath):
     """Save certificate to file."""
-    with open(filepath, 'wb') as f:
+    with open(filepath, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
     print(f"✓ Saved certificate: {filepath}")
 
@@ -48,19 +50,21 @@ def save_certificate(cert, filepath):
 def create_ca(cert_dir):
     """Create Certificate Authority."""
     print("\n[1/3] Creating Certificate Authority...")
-    
+
     # Generate CA private key
     ca_key = generate_private_key()
-    
+
     # Create CA certificate
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "UK"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "England"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, "Coventry"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "HoneyGrid Project"),
-        x509.NameAttribute(NameOID.COMMON_NAME, "HoneyGrid Root CA"),
-    ])
-    
+    subject = issuer = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "UK"),
+            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "England"),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, "Coventry"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "HoneyGrid Project"),
+            x509.NameAttribute(NameOID.COMMON_NAME, "HoneyGrid Root CA"),
+        ]
+    )
+
     ca_cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -89,28 +93,30 @@ def create_ca(cert_dir):
         )
         .sign(ca_key, hashes.SHA256())
     )
-    
+
     # Save CA files
     save_private_key(ca_key, cert_dir / "ca.key")
     save_certificate(ca_cert, cert_dir / "ca.crt")
-    
+
     return ca_key, ca_cert
 
 
 def create_server_cert(cert_dir, ca_key, ca_cert, hostname="localhost"):
     """Create server certificate signed by CA."""
     print(f"\n[2/3] Creating server certificate for '{hostname}'...")
-    
+
     # Generate server private key
     server_key = generate_private_key()
-    
+
     # Create server certificate
-    subject = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "UK"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "HoneyGrid Project"),
-        x509.NameAttribute(NameOID.COMMON_NAME, hostname),
-    ])
-    
+    subject = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "UK"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "HoneyGrid Project"),
+            x509.NameAttribute(NameOID.COMMON_NAME, hostname),
+        ]
+    )
+
     server_cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -120,11 +126,13 @@ def create_server_cert(cert_dir, ca_key, ca_cert, hostname="localhost"):
         .not_valid_before(datetime.now(timezone.utc))
         .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))  # 1 year
         .add_extension(
-            x509.SubjectAlternativeName([
-                x509.DNSName(hostname),
-                x509.DNSName("localhost"),
-                x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
-            ]),
+            x509.SubjectAlternativeName(
+                [
+                    x509.DNSName(hostname),
+                    x509.DNSName("localhost"),
+                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+                ]
+            ),
             critical=False,
         )
         .add_extension(
@@ -151,28 +159,30 @@ def create_server_cert(cert_dir, ca_key, ca_cert, hostname="localhost"):
         )
         .sign(ca_key, hashes.SHA256())
     )
-    
+
     # Save server files
     save_private_key(server_key, cert_dir / "server.key")
     save_certificate(server_cert, cert_dir / "server.crt")
-    
+
     return server_key, server_cert
 
 
 def create_agent_cert(cert_dir, ca_key, ca_cert, agent_id="client-001"):
     """Create agent certificate signed by CA."""
     print(f"\n[3/3] Creating agent certificate for '{agent_id}'...")
-    
+
     # Generate agent private key
     agent_key = generate_private_key()
-    
+
     # Create agent certificate
-    subject = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "UK"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "HoneyGrid Project"),
-        x509.NameAttribute(NameOID.COMMON_NAME, agent_id),
-    ])
-    
+    subject = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "UK"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "HoneyGrid Project"),
+            x509.NameAttribute(NameOID.COMMON_NAME, agent_id),
+        ]
+    )
+
     agent_cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -205,11 +215,11 @@ def create_agent_cert(cert_dir, ca_key, ca_cert, agent_id="client-001"):
         )
         .sign(ca_key, hashes.SHA256())
     )
-    
+
     # Save agent files
     save_private_key(agent_key, cert_dir / f"client_{agent_id}.key")
     save_certificate(agent_cert, cert_dir / f"client_{agent_id}.crt")
-    
+
     return agent_key, agent_cert
 
 
@@ -218,20 +228,20 @@ def main():
     print("=" * 60)
     print("HoneyGrid SSL Certificate Generator")
     print("=" * 60)
-    
+
     # Get project root
     project_root = Path(__file__).parent.parent
     cert_dir = project_root / "certs"
-    
+
     # Create certs directory
     cert_dir.mkdir(exist_ok=True)
     print(f"\nCertificate directory: {cert_dir}")
-    
+
     # Generate certificates
     ca_key, ca_cert = create_ca(cert_dir)
     server_key, server_cert = create_server_cert(cert_dir, ca_key, ca_cert)
     agent_key, agent_cert = create_agent_cert(cert_dir, ca_key, ca_cert, "agent-001")
-    
+
     # Generate additional agent certificates if requested
     if len(sys.argv) > 1:
         try:
@@ -240,7 +250,7 @@ def main():
                 create_agent_cert(cert_dir, ca_key, ca_cert, f"agent-{i:03d}")
         except ValueError:
             print("\nWarning: Invalid number of agents specified")
-    
+
     print("\n" + "=" * 60)
     print("✓ Certificate generation complete!")
     print("=" * 60)
