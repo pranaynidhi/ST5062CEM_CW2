@@ -189,7 +189,7 @@ Write-Host "Rename-Item '$honeytokenDir\db_password.txt' 'db_password_backup.txt
 Write-Host " → Should trigger MOVED event in GUI" -ForegroundColor DarkGreen
 Write-Host ""
 Write-Host "⏱️  BULK TEST (rapid modifications):" -ForegroundColor Cyan
-$bulkCmd = 'for (`$i = 0; `$i -lt 5; `$i++) { Add-Content "__PATH__" "Edit `$i" }'
+$bulkCmd = 'for ($i = 0; $i -lt 5; $i++) { Add-Content "__PATH__" "Edit $i" }'
 $bulkCmd = $bulkCmd.Replace('__PATH__', "$honeytokenDir\roadmap.txt")
 Write-Host $bulkCmd -ForegroundColor Gray
 Write-Host " → Should trigger multiple MODIFIED events" -ForegroundColor DarkGreen

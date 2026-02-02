@@ -31,7 +31,8 @@ class EmailNotifier(Notifier):
         smtp_password: str = "",
         from_address: str = "honeygrid@example.com",
         to_addresses: List[str] = None,
-        use_tls: bool = True
+        use_tls: bool = True,
+        logo_url: Optional[str] = None
     ):
         """
         Initialize email notifier.
@@ -55,6 +56,7 @@ class EmailNotifier(Notifier):
         self.from_address = from_address
         self.to_addresses = to_addresses or []
         self.use_tls = use_tls
+        self.logo_url = logo_url
         
         if not self.to_addresses:
             logger.warning("No email recipients configured")
@@ -196,6 +198,14 @@ class EmailNotifier(Notifier):
             Severity.CRITICAL: "#d32f2f"
         }
         color = severity_colors.get(severity, "#f44336")
+        logo_html = ""
+        if self.logo_url:
+            logo_html = (
+                f"<div style=\"text-align:center; margin: 10px 0 15px;\">"
+                f"<img src=\"{self.logo_url}\" alt=\"HoneyGrid\" "
+                f"style=\"width:72px; height:72px; border-radius: 12px;\" />"
+                f"</div>"
+            )
         
         html = f"""
 <!DOCTYPE html>
@@ -218,6 +228,7 @@ class EmailNotifier(Notifier):
             <p style="margin: 0; font-size: 14px;">Severity: {severity.name}</p>
         </div>
         <div class="content">
+            {logo_html}
             <div class="info-row">
                 <span class="label">Time:</span>
                 <span>{time_str}</span>
@@ -298,7 +309,16 @@ class EmailNotifier(Notifier):
         for severity in Severity:
             count = severity_counts.get(severity, 0)
             if count > 0:
-                severity_summary += f"<li>{severity.value.upper()}: {count}</li>"
+                severity_summary += f"<li>{severity.name}: {count}</li>"
+
+        logo_html = ""
+        if self.logo_url:
+            logo_html = (
+                f"<div style=\"text-align:center; margin: 10px 0 15px;\">"
+                f"<img src=\"{self.logo_url}\" alt=\"HoneyGrid\" "
+                f"style=\"width:72px; height:72px; border-radius: 12px;\" />"
+                f"</div>"
+            )
         
         # Build event list
         events_html = ""
@@ -351,6 +371,7 @@ class EmailNotifier(Notifier):
             <p style="margin: 0;">Total Events: {len(events)}</p>
         </div>
         <div class="content">
+            {logo_html}
             <div class="summary">
                 <h3>Summary by Severity</h3>
                 <ul>
