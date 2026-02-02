@@ -21,7 +21,7 @@ Tests server-agent communication with real TLS connections:
 
 **What's tested:**
 
-- TLS mutual authentication (CA, server cert, client cert)
+- TLS mutual authentication (CA, server cert, agent cert)
 - Message framing and parsing
 - Database event storage
 - Nonce-based replay protection

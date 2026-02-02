@@ -115,7 +115,7 @@ class TestClientHandler(unittest.TestCase):
         self.addr = ("127.0.0.1", 12345)
     
     def test_init_without_cert(self):
-        """Test ClientHandler initialization without client certificate."""
+        """Test ClientHandler initialization without agent certificate."""
         # Mock writer to return no SSL info
         self.writer.get_extra_info.return_value = None
         
@@ -135,7 +135,7 @@ class TestClientHandler(unittest.TestCase):
         self.assertEqual(handler.message_count, 0)
     
     def test_init_with_cert(self):
-        """Test ClientHandler initialization with client certificate."""
+        """Test ClientHandler initialization with agent certificate."""
         # Mock SSL object with certificate
         mock_ssl = Mock()
         mock_ssl.getpeercert.return_value = {
