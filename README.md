@@ -10,10 +10,13 @@ HoneyGrid enables security teams to deploy and monitor honeytokens (decoy files)
 
 - **Distributed Agent Monitoring**: Watchdog-based file system monitoring on each endpoint
 - **Mutual TLS Security**: Certificate-based authentication between agents and server
-- **Encrypted Storage**: SQLCipher-encrypted database for event storage
-- **Real-time GUI Dashboard**: tkinter-based network map and alert panel
+- **Encrypted Storage**: Application-level encryption (Fernet) for sensitive database fields
+- **Real-time GUI Dashboard**: tkinter-based network map, alerts, and statistics tabs
 - **Rate Limiting & Replay Protection**: DoS mitigation and nonce-based replay prevention
 - **Token Deployment**: Remote honeytoken deployment via GUI dialog
+- **Notifications**: Email and Discord webhook alerts with severity filtering
+- **Agent Health Monitoring**: Offline/warning detection with status indicators
+- **Alert Search/Filter**: Filter alerts by agent, token, type, or path
 
 ## 📋 Requirements
 
@@ -90,12 +93,18 @@ HoneyGrid\
 │   └── config.py          # Agent configuration
 ├── server\                 # Server components
 │   ├── server.py          # Asyncio TLS server
-│   ├── db.py              # SQLCipher database manager
+│   ├── db.py              # Encrypted SQLite database manager
 │   └── protocol.py        # Frame parsing & validation
+│   ├── config_loader.py   # YAML configuration loader
+│   └── notifiers\         # Notification channels
+│       ├── base.py         # Notifier base classes
+│       ├── email_notifier.py
+│       └── discord_notifier.py
 ├── gui_tk\                 # tkinter GUI
 │   ├── app.py             # Main dashboard window
 │   ├── map_frame.py       # Network visualization
 │   ├── alert_frame.py     # Alert list & details
+│   ├── stats_frame.py     # Statistics dashboard
 │   └── deploy_dialog.py   # Token deployment dialog
 ├── certs\                  # SSL certificates (generated)
 │   ├── ca.crt             # Certificate Authority
@@ -143,6 +152,15 @@ HoneyGrid\
 pytest tests\unit -v
 ```
 
+### Run Live Notification Tests (Optional)
+
+These require real SMTP/Discord credentials and are skipped by default.
+
+```cmd
+set HONEYGRID_RUN_LIVE_NOTIFICATIONS=1
+pytest tests\test_notifications.py -v
+```
+
 ### Run Integration Tests
 
 ```cmd
@@ -174,6 +192,8 @@ View coverage report: `htmlcov\index.html`
   - 🟡 Yellow: Warning state
   - 🔴 Red: Token triggered recently
 - **Alert Panel** (right panel): Chronological event list
+- **Search/Filter**: Filter alerts by agent, token, type, or path
+- **Statistics Tab**: Event counts by agent, token, and type
 - Click event for detailed pop-up (token_id, path, timestamp)
 
 ### Exporting Data
