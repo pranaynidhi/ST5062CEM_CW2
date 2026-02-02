@@ -126,6 +126,18 @@ class HoneyGridApp:
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         
         # Main container with PanedWindow
+        # Server warning banner (hidden by default)
+        self.server_banner = ttk.Label(
+            self.root,
+            text="⚠️  Server not running - start the server to receive events",
+            background="#fff3cd",
+            foreground="#856404",
+            padding=6,
+            anchor=tk.CENTER
+        )
+        self.server_banner.pack(fill=tk.X, padx=5, pady=(5, 0))
+        self.server_banner.pack_forget()
+
         paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
@@ -246,6 +258,7 @@ class HoneyGridApp:
     
     def _periodic_refresh(self):
         """Periodic refresh of data."""
+        self._update_server_status()
         if self.map_frame:
             self.map_frame.refresh()
         if self.alert_frame:
@@ -543,6 +556,19 @@ class HoneyGridApp:
     def _set_status(self, message: str):
         """Update status bar."""
         self.status_bar.config(text=message)
+
+    def _update_server_status(self):
+        """Update server status banner and status bar hint."""
+        if self._is_server_running():
+            if self.server_banner.winfo_ismapped():
+                self.server_banner.pack_forget()
+            # Only overwrite status if it's a server warning
+            if self.status_bar.cget("text").startswith("⚠️ Server"):
+                self._set_status("Ready")
+        else:
+            if not self.server_banner.winfo_ismapped():
+                self.server_banner.pack(fill=tk.X, padx=5, pady=(5, 0))
+            self._set_status("⚠️ Server not running")
     
     def _on_close(self):
         """Handle window close."""
