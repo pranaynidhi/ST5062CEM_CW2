@@ -223,6 +223,8 @@ class DatabaseManager:
         Returns:
             True if successful
         """
+        if not self.connection:
+            return False
         cursor = self.connection.cursor()
         timestamp = int(time.time())
         
@@ -497,6 +499,8 @@ class DatabaseManager:
         Returns:
             Statistics dictionary
         """
+        if not self.connection:
+            return {"total_agents": 0, "total_events": 0, "total_tokens": 0, "events_24h": 0, "db_size_bytes": 0}
         cursor = self.connection.cursor()
         
         # Count agents
