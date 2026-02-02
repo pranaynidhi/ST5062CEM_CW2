@@ -175,10 +175,26 @@ class MapFrame(ttk.Frame):
         # Draw agent ID text
         self.canvas.create_text(
             x,
-            y,
+            y - 5,
             text=agent_id,
             fill="white",
-            font=("Arial", 10, "bold")
+            font=("Arial", 9, "bold")
+        )
+        
+        # Draw status icon
+        status_icons = {
+            "healthy": "●",
+            "warning": "▲",
+            "triggered": "✖",
+            "offline": "○"
+        }
+        icon = status_icons.get(status, "?")
+        self.canvas.create_text(
+            x,
+            y + 8,
+            text=icon,
+            fill="white",
+            font=("Arial", 12, "bold")
         )
         
         # Draw status text below
@@ -222,7 +238,7 @@ class MapFrame(ttk.Frame):
     
     def _on_node_click(self, agent_id: str):
         """
-        Handle node click.
+        Handle node click - show detailed agent information.
         
         Args:
             agent_id: Clicked agent ID
@@ -231,16 +247,38 @@ class MapFrame(ttk.Frame):
         if not agent:
             return
         
-        # Show agent info
+        # Create info dialog
+        from tkinter import messagebox
+        import time
+        
+        # Format last seen time
+        last_seen = agent.get('last_seen', 0)
+        if last_seen > 0:
+            last_seen_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_seen))
+            time_ago = int(time.time()) - last_seen
+            if time_ago < 60:
+                time_ago_str = f"{time_ago}s ago"
+            elif time_ago < 3600:
+                time_ago_str = f"{time_ago // 60}m ago"
+            else:
+                time_ago_str = f"{time_ago // 3600}h ago"
+        else:
+            last_seen_str = "Never"
+            time_ago_str = "N/A"
+        
+        # Build info message
         info = (
-            f"Agent: {agent_id}\n"
-            f"Status: {agent.get('status', 'unknown')}\n"
-            f"IP: {agent.get('ip_address', 'N/A')}\n"
-            f"Hostname: {agent.get('hostname', 'N/A')}"
+            f"Agent Information\n"
+            f"{'=' * 40}\n\n"
+            f"Agent ID: {agent_id}\n"
+            f"Status: {agent.get('status', 'unknown').upper()}\n"
+            f"IP Address: {agent.get('ip_address', 'N/A')}\n"
+            f"Hostname: {agent.get('hostname', 'N/A')}\n\n"
+            f"Last Seen: {last_seen_str}\n"
+            f"Time Since: {time_ago_str}\n"
         )
         
-        # Create tooltip or info window
-        print(f"Clicked: {info}")
+        messagebox.showinfo(f"Agent: {agent_id}", info)
 
 
 if __name__ == "__main__":

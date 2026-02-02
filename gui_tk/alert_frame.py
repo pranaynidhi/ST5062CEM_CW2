@@ -28,6 +28,13 @@ class AlertFrame(ttk.Frame):
         
         self.db = db
         self.events = []
+        self.filtered_events = []
+        self.search_vars = {
+            'agent': tk.StringVar(),
+            'token': tk.StringVar(),
+            'type': tk.StringVar(),
+            'path': tk.StringVar(),
+        }
         
         # Build UI
         self._build_ui()
@@ -63,6 +70,36 @@ class AlertFrame(ttk.Frame):
         # Event count label
         self.count_label = ttk.Label(toolbar, text="Events: 0")
         self.count_label.pack(side=tk.RIGHT, padx=5)
+        
+        # Search/Filter bar
+        search_frame = ttk.LabelFrame(self, text="Search/Filter Events", padding="5")
+        search_frame.pack(fill=tk.X, padx=5, pady=2)
+        
+        ttk.Label(search_frame, text="Agent:").grid(row=0, column=0, sticky=tk.W)
+        agent_entry = ttk.Entry(search_frame, textvariable=self.search_vars['agent'], width=12)
+        agent_entry.grid(row=0, column=1, padx=2)
+        
+        ttk.Label(search_frame, text="Token:").grid(row=0, column=2, sticky=tk.W)
+        token_entry = ttk.Entry(search_frame, textvariable=self.search_vars['token'], width=12)
+        token_entry.grid(row=0, column=3, padx=2)
+        
+        ttk.Label(search_frame, text="Type:").grid(row=0, column=4, sticky=tk.W)
+        type_entry = ttk.Entry(search_frame, textvariable=self.search_vars['type'], width=10)
+        type_entry.grid(row=0, column=5, padx=2)
+        
+        ttk.Label(search_frame, text="Path:").grid(row=0, column=6, sticky=tk.W)
+        path_entry = ttk.Entry(search_frame, textvariable=self.search_vars['path'], width=18)
+        path_entry.grid(row=0, column=7, padx=2)
+        
+        search_btn = ttk.Button(search_frame, text="Apply", command=self.apply_filter)
+        search_btn.grid(row=0, column=8, padx=4)
+        
+        clear_btn = ttk.Button(search_frame, text="Reset", command=self.clear_filter)
+        clear_btn.grid(row=0, column=9, padx=2)
+        
+        # Auto-apply filter on text change
+        for var in self.search_vars.values():
+            var.trace_add('write', lambda *args: self.apply_filter())
         
         # Treeview for events
         tree_frame = ttk.Frame(self)
@@ -127,14 +164,36 @@ class AlertFrame(ttk.Frame):
             # Get recent events
             self.events = self.db.get_recent_events(limit=100)
             
-            # Update treeview
-            self._populate_tree()
-            
-            # Update count
-            self.count_label.config(text=f"Events: {len(self.events)}")
+            # Apply current filter
+            self.apply_filter()
         
         except Exception as e:
             print(f"Failed to refresh events: {e}")
+    
+    def apply_filter(self):
+        """Apply search/filter to events."""
+        agent = self.search_vars['agent'].get().strip().lower()
+        token = self.search_vars['token'].get().strip().lower()
+        typ = self.search_vars['type'].get().strip().lower()
+        path = self.search_vars['path'].get().strip().lower()
+        
+        def match(event):
+            return (
+                (not agent or agent in str(event.get('agent_id', '')).lower()) and
+                (not token or token in str(event.get('token_id', '')).lower()) and
+                (not typ or typ in str(event.get('event_type', '')).lower()) and
+                (not path or path in str(event.get('path', '')).lower())
+            )
+        
+        self.filtered_events = [e for e in self.events if match(e)]
+        self._populate_tree()
+        self.count_label.config(text=f"Events: {len(self.filtered_events)}")
+    
+    def clear_filter(self):
+        """Clear all search filters."""
+        for var in self.search_vars.values():
+            var.set("")
+        self.apply_filter()
     
     def _populate_tree(self):
         """Populate treeview with events."""
@@ -142,8 +201,11 @@ class AlertFrame(ttk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
         
+        # Use filtered_events if available, otherwise all events
+        events_to_display = self.filtered_events if hasattr(self, 'filtered_events') else self.events
+        
         # Add events (most recent first)
-        for event in self.events:
+        for event in events_to_display:
             # Format timestamp
             timestamp = event.get('timestamp', 0)
             time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
@@ -168,6 +230,7 @@ class AlertFrame(ttk.Frame):
     def clear(self):
         """Clear event list."""
         self.events = []
+        self.filtered_events = []
         self._populate_tree()
         self.count_label.config(text="Events: 0")
     
