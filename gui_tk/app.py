@@ -10,6 +10,8 @@ import threading
 import queue
 import time
 import sys
+import socket
+import subprocess
 from pathlib import Path
 
 # Add parent directory for imports
@@ -71,6 +73,7 @@ class HoneyGridApp:
         # State
         self.is_running = False
         self.update_thread = None
+        self.server_process = None
         
         # Build UI
         self._build_ui()
@@ -91,6 +94,8 @@ class HoneyGridApp:
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Refresh Data", command=self._refresh_data)
+        file_menu.add_separator()
+        file_menu.add_command(label="Reset Database", command=self._reset_database)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self._on_close)
         
@@ -314,6 +319,226 @@ class HoneyGridApp:
             "ST5062CEM Coursework 2\n"
             "Coventry University"
         )
+    
+    def _reset_database(self):
+        """Reset entire database after confirmation."""
+        if not self.db:
+            messagebox.showerror("Error", "Database not connected")
+            return
+        
+        # Confirm action
+        result = messagebox.askyesno(
+            "Reset Database",
+            "⚠️  This will delete ALL events, agents, and tokens.\n\n"
+            "This action cannot be undone!\n\n"
+            "Are you sure?",
+            icon=messagebox.WARNING
+        )
+        
+        if not result:
+            return
+        
+        try:
+            # Stop server before resetting database
+            if not self._stop_server_if_running():
+                return
+
+            # Close current connection
+            try:
+                self.db.close()
+            except Exception:
+                pass
+            
+            # Delete database file
+            import os
+            try:
+                if os.path.exists(self.db_path):
+                    os.remove(self.db_path)
+                    self._set_status("Database deleted")
+            except Exception as e:
+                # Reconnect so the UI keeps working
+                self.db = DatabaseManager(self.db_path, self.db_password)
+                self.db.connect()
+                if self.map_frame:
+                    self.map_frame.set_database(self.db)
+                if self.alert_frame:
+                    self.alert_frame.set_database(self.db)
+                if self.stats_frame:
+                    self.stats_frame.set_database(self.db)
+                self._refresh_data()
+
+                messagebox.showerror(
+                    "Reset Error",
+                    "Failed to reset database (file is in use).\n\n"
+                    "Please stop the server before resetting the database.\n\n"
+                    f"Details: {e}"
+                )
+                self._set_status("Database reset failed")
+                return
+            
+            # Reconnect and reinitialize
+            self.db = DatabaseManager(self.db_path, self.db_password)
+            self.db.connect()
+            
+            # Update all frames with new database
+            if self.map_frame:
+                self.map_frame.set_database(self.db)
+            if self.alert_frame:
+                self.alert_frame.set_database(self.db)
+            if self.stats_frame:
+                self.stats_frame.set_database(self.db)
+            
+            # Refresh displays
+            self._refresh_data()
+            
+            messagebox.showinfo(
+                "Database Reset",
+                "✓ Database has been reset successfully!\n\n"
+                "All events, agents, and tokens have been cleared."
+            )
+            self._set_status("Database reset complete")
+
+            # Restart server after reset
+            self._restart_server_after_reset()
+        
+        except Exception as e:
+            messagebox.showerror("Reset Error", f"Failed to reset database:\n{e}")
+            self._set_status("Database reset failed")
+
+    def _stop_server_if_running(self) -> bool:
+        """Stop the HoneyGrid server if running. Returns False if server can't be stopped."""
+        if not self._is_server_running():
+            return True
+
+        # If this GUI started the server, terminate it
+        if self.server_process and self.server_process.poll() is None:
+            try:
+                self.server_process.terminate()
+                self.server_process.wait(timeout=5)
+                return True
+            except Exception as e:
+                messagebox.showerror(
+                    "Server Stop Error",
+                    f"Failed to stop server process:\n{e}"
+                )
+                return False
+
+        # Server is running but not owned by this GUI
+        result = messagebox.askyesno(
+            "Server Stop Required",
+            "Server is running in another process.\n\n"
+            "Do you want to stop it now?"
+        )
+        if not result:
+            return False
+
+        try:
+            subprocess.run(
+                [
+                    "powershell",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-Command",
+                    "Get-CimInstance Win32_Process | "
+                    "Where-Object { $_.CommandLine -match 'server\\server.py' } | "
+                    "ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            time.sleep(1)
+        except Exception as e:
+            messagebox.showerror(
+                "Server Stop Error",
+                f"Failed to stop server:\n{e}"
+            )
+            return False
+
+        if self._is_server_running():
+            messagebox.showerror(
+                "Server Stop Error",
+                "Server is still running.\n\n"
+                "Please stop it manually, then retry the reset."
+            )
+            return False
+
+        return True
+
+    def _restart_server_after_reset(self):
+        """Restart the server after database reset."""
+        restart_script = Path("restart_server.ps1")
+        if restart_script.exists():
+            try:
+                subprocess.run(
+                    [
+                        "powershell",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-File",
+                        str(restart_script),
+                        "-DbPath",
+                        self.db_path,
+                        "-DbPassword",
+                        self.db_password,
+                        "-Host",
+                        "0.0.0.0",
+                        "-Port",
+                        "9000",
+                        "-PythonPath",
+                        sys.executable
+                    ],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                self._set_status("Server restarted")
+                return
+            except Exception as e:
+                messagebox.showerror(
+                    "Server Restart Error",
+                    f"Failed to restart server:\n{e}"
+                )
+                self._set_status("Server restart failed")
+                return
+
+        # Fallback to direct start if script not found
+        self._ensure_server_running()
+
+    def _ensure_server_running(self):
+        """Ensure the HoneyGrid server is running, start it if needed."""
+        if self._is_server_running():
+            return
+
+        try:
+            args = [
+                sys.executable,
+                "server/server.py",
+                "--host", "0.0.0.0",
+                "--port", "9000",
+                "--db", self.db_path,
+                "--db-password", self.db_password
+            ]
+            self.server_process = subprocess.Popen(
+                args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            self._set_status("Server restarted")
+        except Exception as e:
+            messagebox.showerror(
+                "Server Restart Error",
+                f"Failed to restart server:\n{e}"
+            )
+            self._set_status("Server restart failed")
+
+    def _is_server_running(self) -> bool:
+        """Check if server is listening on localhost:9000."""
+        try:
+            with socket.create_connection(("127.0.0.1", 9000), timeout=0.5):
+                return True
+        except OSError:
+            return False
     
     def _set_status(self, message: str):
         """Update status bar."""
