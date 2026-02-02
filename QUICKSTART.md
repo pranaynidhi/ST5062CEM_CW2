@@ -237,7 +237,7 @@ python server\server.py ^
 
 ## 📈 Monitoring Multiple Agents
 
-**Generate additional client certificates:**
+**Generate additional agent certificates:**
 
 ```cmd
 python scripts\generate_certs.py 3

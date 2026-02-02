@@ -110,7 +110,7 @@ HoneyGrid\
 │   ├── ca.crt             # Certificate Authority
 │   ├── server.crt         # Server certificate
 │   ├── server.key         # Server private key
-│   └── client_*.crt       # Client certificates
+│   └── client_*.crt       # Agent certificates
 ├── tests\                  # Test suites
 │   ├── unit\              # Unit tests
 │   └── integration\       # Integration tests
@@ -124,8 +124,8 @@ HoneyGrid\
 
 ### Mutual TLS Authentication
 
-- **Server**: Requires valid client certificate signed by CA
-- **Client**: Verifies server certificate against CA
+- **Server**: Requires valid agent certificate signed by CA
+- **Agent**: Verifies server certificate against CA
 - **Cipher Suites**: TLS 1.3 with strong ciphers only
 
 ### Replay Protection
