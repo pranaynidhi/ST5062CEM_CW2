@@ -31,7 +31,7 @@ notifications:
 
   # Email notifications
   email:
-    enabled: false
+    enabled: true
     smtp_host: "smtp.gmail.com"
     smtp_port: 587
     smtp_username: "your-email@gmail.com"
@@ -44,7 +44,7 @@ notifications:
 
   # Discord notifications
   discord:
-    enabled: false
+    enabled: true
     webhook_url: "https://discord.com/api/webhooks/YOUR/WEBHOOK/URL"
     username: "HoneyGrid Bot"
     avatar_url: ""
