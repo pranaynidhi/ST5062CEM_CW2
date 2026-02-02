@@ -211,48 +211,54 @@ class EmailNotifier(Notifier):
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: {color}; color: white; padding: 20px; border-radius: 5px 5px 0 0; }}
-        .content {{ background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-top: none; }}
-        .info-row {{ margin: 10px 0; padding: 10px; background: white; border-left: 3px solid {color}; }}
-        .label {{ font-weight: bold; display: inline-block; width: 120px; }}
-        .footer {{ margin-top: 20px; padding: 15px; background: #f1f1f1; font-size: 12px; color: #666; }}
+        body {{ font-family: "Segoe UI", Arial, sans-serif; background: #0f1115; margin: 0; padding: 0; color: #222; }}
+        .wrapper {{ padding: 24px; }}
+        .card {{ max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }}
+        .header {{ background: {color}; color: #ffffff; padding: 22px 24px; }}
+        .header h1 {{ margin: 0; font-size: 20px; letter-spacing: 0.3px; }}
+        .header p {{ margin: 6px 0 0; font-size: 13px; opacity: 0.9; }}
+        .content {{ padding: 22px 24px 10px; background: #f7f8fb; }}
+        .pill {{ display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 999px; font-size: 12px; }}
+        .grid {{ display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; background: #ffffff; border-radius: 12px; padding: 16px; border: 1px solid #eceff4; }}
+        .label {{ font-weight: 600; color: #4b5563; }}
+        .value {{ color: #111827; word-break: break-all; }}
+        .accent {{ border-left: 4px solid {color}; padding-left: 12px; margin: 12px 0 16px; }}
+        .footer {{ padding: 14px 24px 22px; font-size: 12px; color: #6b7280; background: #ffffff; }}
+        .logo {{ text-align: center; margin: 4px 0 14px; }}
+        .logo img {{ width: 64px; height: 64px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>🚨 HoneyGrid Alert</h2>
-            <p style="margin: 0; font-size: 14px;">Severity: {severity.name}</p>
-        </div>
-        <div class="content">
-            {logo_html}
-            <div class="info-row">
-                <span class="label">Time:</span>
-                <span>{time_str}</span>
+    <div class="wrapper">
+        <div class="card">
+            <div class="header">
+                <h1>HoneyGrid Alert</h1>
+                <p><span class="pill">Severity: {severity.name}</span></p>
             </div>
-            <div class="info-row">
-                <span class="label">Agent:</span>
-                <span>{agent_id}</span>
+            <div class="content">
+                <div class="logo">{logo_html}</div>
+                <div class="accent">
+                    A honeytoken was triggered. Review the details below.
+                </div>
+                <div class="grid">
+                    <div class="label">Time</div>
+                    <div class="value">{time_str}</div>
+                    <div class="label">Agent</div>
+                    <div class="value">{agent_id}</div>
+                    <div class="label">Token</div>
+                    <div class="value">{token_id}</div>
+                    <div class="label">Action</div>
+                    <div class="value">{event_type.upper()}</div>
+                    <div class="label">Path</div>
+                    <div class="value">{path}</div>
+                </div>
             </div>
-            <div class="info-row">
-                <span class="label">Token:</span>
-                <span>{token_id}</span>
+            <div class="footer">
+                This is an automated alert from HoneyGrid. Do not reply to this email.
             </div>
-            <div class="info-row">
-                <span class="label">Action:</span>
-                <span>{event_type.upper()}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Path:</span>
-                <span style="word-break: break-all;">{path}</span>
-            </div>
-        </div>
-        <div class="footer">
-            <p>This is an automated alert from HoneyGrid distributed honeytoken monitoring system.</p>
-            <p style="margin: 0;">Do not reply to this email.</p>
         </div>
     </div>
 </body>
@@ -355,35 +361,42 @@ class EmailNotifier(Notifier):
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 700px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: #2c3e50; color: white; padding: 20px; border-radius: 5px 5px 0 0; }}
-        .content {{ background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-top: none; }}
-        .summary {{ background: white; padding: 15px; margin: 15px 0; border-radius: 5px; }}
-        .footer {{ margin-top: 20px; padding: 15px; background: #f1f1f1; font-size: 12px; color: #666; }}
+        body {{ font-family: "Segoe UI", Arial, sans-serif; background: #0f1115; margin: 0; padding: 0; color: #222; }}
+        .wrapper {{ padding: 24px; }}
+        .card {{ max-width: 720px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }}
+        .header {{ background: #1f2937; color: #ffffff; padding: 22px 24px; }}
+        .header h1 {{ margin: 0; font-size: 20px; letter-spacing: 0.3px; }}
+        .header p {{ margin: 6px 0 0; font-size: 13px; opacity: 0.9; }}
+        .content {{ padding: 22px 24px 10px; background: #f7f8fb; }}
+        .logo {{ text-align: center; margin: 4px 0 14px; }}
+        .logo img {{ width: 64px; height: 64px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }}
+        .summary {{ background: #ffffff; border-radius: 12px; padding: 14px 16px; border: 1px solid #eceff4; }}
+        .events-title {{ margin: 18px 0 8px; font-size: 16px; color: #111827; }}
+        .footer {{ padding: 14px 24px 22px; font-size: 12px; color: #6b7280; background: #ffffff; }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>🚨 HoneyGrid Alert Digest</h2>
-            <p style="margin: 0;">Total Events: {len(events)}</p>
-        </div>
-        <div class="content">
-            {logo_html}
-            <div class="summary">
-                <h3>Summary by Severity</h3>
-                <ul>
-                    {severity_summary}
-                </ul>
+    <div class="wrapper">
+        <div class="card">
+            <div class="header">
+                <h1>HoneyGrid Alert Digest</h1>
+                <p>Total Events: {len(events)}</p>
             </div>
-            <h3>Event Details</h3>
-            {events_html}
-        </div>
-        <div class="footer">
-            <p>This is an automated digest from HoneyGrid distributed honeytoken monitoring system.</p>
-            <p style="margin: 0;">Do not reply to this email.</p>
+            <div class="content">
+                <div class="logo">{logo_html}</div>
+                <div class="summary">
+                    <h3 style="margin: 0 0 6px;">Summary by Severity</h3>
+                    <ul style="margin: 0; padding-left: 18px;">{severity_summary}</ul>
+                </div>
+                <div class="events-title">Event Details</div>
+                {events_html}
+            </div>
+            <div class="footer">
+                This is an automated digest from HoneyGrid. Do not reply to this email.
+            </div>
         </div>
     </div>
 </body>
