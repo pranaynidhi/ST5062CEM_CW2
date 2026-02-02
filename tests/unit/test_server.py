@@ -111,6 +111,7 @@ class TestClientHandler(unittest.TestCase):
         self.db = Mock()
         self.nonce_cache = LRUCache(max_size=100)
         self.event_queue = Queue()
+        self.notifiers = []
         self.addr = ("127.0.0.1", 12345)
     
     def test_init_without_cert(self):
@@ -124,6 +125,7 @@ class TestClientHandler(unittest.TestCase):
             self.db,
             self.nonce_cache,
             self.event_queue,
+            self.notifiers,
             self.addr
         )
         
@@ -147,6 +149,7 @@ class TestClientHandler(unittest.TestCase):
             self.db,
             self.nonce_cache,
             self.event_queue,
+            self.notifiers,
             self.addr
         )
         
@@ -164,6 +167,7 @@ class TestClientHandler(unittest.TestCase):
             self.db,
             self.nonce_cache,
             self.event_queue,
+            self.notifiers,
             self.addr
         )
         
@@ -183,6 +187,7 @@ class TestClientHandler(unittest.TestCase):
             self.db,
             self.nonce_cache,
             self.event_queue,
+            self.notifiers,
             self.addr
         )
         
@@ -237,8 +242,7 @@ class TestClientHandlerProperties:
         writer = MagicMock(spec=asyncio.StreamWriter)
         writer.get_extra_info.return_value = None
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert hasattr(handler, 'reader')
     
@@ -248,8 +252,7 @@ class TestClientHandlerProperties:
         writer = MagicMock(spec=asyncio.StreamWriter)
         writer.get_extra_info.return_value = None
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert hasattr(handler, 'writer')
     
@@ -259,8 +262,7 @@ class TestClientHandlerProperties:
         writer = MagicMock(spec=asyncio.StreamWriter)
         writer.get_extra_info.return_value = None
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert hasattr(handler, 'db')
     
@@ -270,8 +272,7 @@ class TestClientHandlerProperties:
         writer = MagicMock(spec=asyncio.StreamWriter)
         writer.get_extra_info.return_value = None
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert hasattr(handler, 'nonce_cache')
     
@@ -281,8 +282,7 @@ class TestClientHandlerProperties:
         writer = MagicMock(spec=asyncio.StreamWriter)
         writer.get_extra_info.return_value = None
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert hasattr(handler, 'event_queue')
     
@@ -294,7 +294,7 @@ class TestClientHandlerProperties:
         addr = ("192.168.1.100", 9000)
         
         handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), addr
+            reader, writer, Mock(), LRUCache(), Queue(), [], addr
         )
         assert handler.addr == addr
     
@@ -305,7 +305,7 @@ class TestClientHandlerProperties:
         writer.get_extra_info.return_value = None
         
         handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+            reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert handler.is_authenticated is False
 
@@ -324,8 +324,7 @@ class TestClientHandlerWithDifferentCerts:
         }
         writer.get_extra_info.return_value = mock_ssl
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert handler.agent_id == "test-agent-001"
     
@@ -340,8 +339,7 @@ class TestClientHandlerWithDifferentCerts:
         }
         writer.get_extra_info.return_value = mock_ssl
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("127.0.0.1", 12345)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("127.0.0.1", 12345)
         )
         assert handler.agent_id == "unknown"
     
@@ -354,8 +352,7 @@ class TestClientHandlerWithDifferentCerts:
         mock_ssl.getpeercert.return_value = None
         writer.get_extra_info.return_value = mock_ssl
         
-        handler = ClientHandler(
-            reader, writer, Mock(), LRUCache(), Queue(), ("10.0.0.1", 8443)
+        handler = ClientHandler(reader, writer, Mock(), LRUCache(), Queue(), [], ("10.0.0.1", 8443)
         )
         assert "unknown_10.0.0.1_8443" == handler.agent_id
 
@@ -390,3 +387,5 @@ class TestLRUCacheBehavior:
 
 if __name__ == '__main__':
     unittest.main()
+
+
