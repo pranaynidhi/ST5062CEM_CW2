@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from server.db import DatabaseManager
 from gui_tk.map_frame import MapFrame
 from gui_tk.alert_frame import AlertFrame
+from gui_tk.stats_frame import StatsFrame
 from gui_tk.deploy_dialog import show_deploy_dialog
 
 
@@ -65,6 +66,7 @@ class HoneyGridApp:
         # Components
         self.map_frame = None
         self.alert_frame = None
+        self.stats_frame = None
         
         # State
         self.is_running = False
@@ -135,18 +137,27 @@ class HoneyGridApp:
         self.map_frame = MapFrame(left_frame, self.db)
         self.map_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Right panel - Alert List
+        # Right panel - Tabbed notebook for Alerts and Stats
         right_frame = ttk.Frame(paned)
         paned.add(right_frame, weight=3)
         
-        ttk.Label(
-            right_frame,
-            text="Alert Panel",
-            font=("Arial", 12, "bold")
-        ).pack(pady=5)
+        # Create notebook (tabs)
+        notebook = ttk.Notebook(right_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
         
-        self.alert_frame = AlertFrame(right_frame, self.db)
+        # Alert tab
+        alert_tab = ttk.Frame(notebook)
+        notebook.add(alert_tab, text="Alerts")
+        
+        self.alert_frame = AlertFrame(alert_tab, self.db)
         self.alert_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Stats tab
+        stats_tab = ttk.Frame(notebook)
+        notebook.add(stats_tab, text="Statistics")
+        
+        self.stats_frame = StatsFrame(stats_tab, self.db)
+        self.stats_frame.pack(fill=tk.BOTH, expand=True)
     
     def _connect_database(self):
         """Connect to database."""
@@ -159,6 +170,8 @@ class HoneyGridApp:
                 self.map_frame.set_database(self.db)
             if self.alert_frame:
                 self.alert_frame.set_database(self.db)
+            if self.stats_frame:
+                self.stats_frame.set_database(self.db)
             
             self._set_status("Connected to database")
         except Exception as e:
@@ -232,6 +245,8 @@ class HoneyGridApp:
             self.map_frame.refresh()
         if self.alert_frame:
             self.alert_frame.refresh()
+        if self.stats_frame:
+            self.stats_frame.refresh()
     
     def _refresh_data(self):
         """Refresh all data."""
