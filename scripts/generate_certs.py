@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SSL Certificate Generation Script for HoneyGrid
-Generates CA, server, and client certificates for mutual TLS authentication.
+Generates CA, server, and agent certificates for mutual TLS authentication.
 """
 
 import os
@@ -159,25 +159,25 @@ def create_server_cert(cert_dir, ca_key, ca_cert, hostname="localhost"):
     return server_key, server_cert
 
 
-def create_client_cert(cert_dir, ca_key, ca_cert, client_id="client-001"):
-    """Create client certificate signed by CA."""
-    print(f"\n[3/3] Creating client certificate for '{client_id}'...")
+def create_agent_cert(cert_dir, ca_key, ca_cert, agent_id="client-001"):
+    """Create agent certificate signed by CA."""
+    print(f"\n[3/3] Creating agent certificate for '{agent_id}'...")
     
-    # Generate client private key
-    client_key = generate_private_key()
+    # Generate agent private key
+    agent_key = generate_private_key()
     
-    # Create client certificate
+    # Create agent certificate
     subject = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, "UK"),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, "HoneyGrid Project"),
-        x509.NameAttribute(NameOID.COMMON_NAME, client_id),
+        x509.NameAttribute(NameOID.COMMON_NAME, agent_id),
     ])
     
-    client_cert = (
+    agent_cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
         .issuer_name(ca_cert.subject)
-        .public_key(client_key.public_key())
+        .public_key(agent_key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(datetime.now(timezone.utc))
         .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))  # 1 year
@@ -206,11 +206,11 @@ def create_client_cert(cert_dir, ca_key, ca_cert, client_id="client-001"):
         .sign(ca_key, hashes.SHA256())
     )
     
-    # Save client files
-    save_private_key(client_key, cert_dir / f"client_{client_id}.key")
-    save_certificate(client_cert, cert_dir / f"client_{client_id}.crt")
+    # Save agent files
+    save_private_key(agent_key, cert_dir / f"client_{agent_id}.key")
+    save_certificate(agent_cert, cert_dir / f"client_{agent_id}.crt")
     
-    return client_key, client_cert
+    return agent_key, agent_cert
 
 
 def main():
@@ -230,16 +230,16 @@ def main():
     # Generate certificates
     ca_key, ca_cert = create_ca(cert_dir)
     server_key, server_cert = create_server_cert(cert_dir, ca_key, ca_cert)
-    client_key, client_cert = create_client_cert(cert_dir, ca_key, ca_cert)
+    agent_key, agent_cert = create_agent_cert(cert_dir, ca_key, ca_cert, "agent-001")
     
-    # Generate additional client certificates if requested
+    # Generate additional agent certificates if requested
     if len(sys.argv) > 1:
         try:
-            num_clients = int(sys.argv[1])
-            for i in range(2, num_clients + 1):
-                create_client_cert(cert_dir, ca_key, ca_cert, f"client-{i:03d}")
+            num_agents = int(sys.argv[1])
+            for i in range(2, num_agents + 1):
+                create_agent_cert(cert_dir, ca_key, ca_cert, f"agent-{i:03d}")
         except ValueError:
-            print("\nWarning: Invalid number of clients specified")
+            print("\nWarning: Invalid number of agents specified")
     
     print("\n" + "=" * 60)
     print("✓ Certificate generation complete!")
@@ -247,12 +247,12 @@ def main():
     print("\nGenerated files:")
     print(f"  • CA Certificate:     {cert_dir / 'ca.crt'}")
     print(f"  • Server Certificate: {cert_dir / 'server.crt'}")
-    print(f"  • Client Certificate: {cert_dir / 'client_client-001.crt'}")
+    print(f"  • Agent Certificate:  {cert_dir / 'client_agent-001.crt'}")
     print("\nUsage:")
     print("  Server: Use server.crt, server.key, ca.crt")
-    print("  Client: Use client_*.crt, client_*.key, ca.crt")
-    print("\nTo generate additional client certificates:")
-    print(f"  python {Path(__file__).name} <num_clients>")
+    print("  Agent:  Use client_*.crt, client_*.key, ca.crt")
+    print("\nTo generate additional agent certificates:")
+    print(f"  python {Path(__file__).name} <num_agents>")
     print()
 
 
