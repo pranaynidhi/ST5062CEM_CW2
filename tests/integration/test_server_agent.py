@@ -105,9 +105,9 @@ class TestServerAgentCommunication:
             ready_event.wait(timeout=5)
             time.sleep(1)  # Additional time for server to bind
 
-            # Create client sender
+            # Create client sender (agent_id must match certificate CN: agent-001)
             sender = SecureSender(
-                agent_id="client-001",
+                agent_id="agent-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -154,9 +154,9 @@ class TestServerAgentCommunication:
             ready_event.wait(timeout=5)
             time.sleep(1)
 
-            # Create sender
+            # Create sender (agent_id must match certificate CN: agent-001)
             sender = SecureSender(
-                agent_id="client-001",
+                agent_id="agent-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -194,7 +194,7 @@ class TestServerAgentCommunication:
             # Find our event
             test_event = None
             for event in events:
-                if event["agent_id"] == "client-001":
+                if event["agent_id"] == "agent-001":
                     test_event = event
                     break
 
@@ -232,9 +232,9 @@ class TestServerAgentCommunication:
             ready_event.wait(timeout=5)
             time.sleep(1)
 
-            # Create sender
+            # Create sender (agent_id must match certificate CN: agent-001)
             sender = SecureSender(
-                agent_id="client-001",
+                agent_id="agent-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -262,7 +262,7 @@ class TestServerAgentCommunication:
             time.sleep(2)
 
             # Verify all events
-            events = temp_db.get_recent_events(agent_id="client-001", limit=10)
+            events = temp_db.get_recent_events(agent_id="agent-001", limit=10)
             assert len(events) >= 5
 
         finally:
@@ -294,9 +294,9 @@ class TestServerAgentCommunication:
             ready_event.wait(timeout=5)
             time.sleep(1)
 
-            # Create sender
+            # Create sender (agent_id must match certificate CN: agent-001)
             sender = SecureSender(
-                agent_id="client-001",
+                agent_id="agent-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,
@@ -322,7 +322,7 @@ class TestServerAgentCommunication:
             time.sleep(1)
 
             # Count events before replay
-            events_before = temp_db.get_recent_events(agent_id="client-001", limit=10)
+            events_before = temp_db.get_recent_events(agent_id="agent-001", limit=10)
             count_before = len(events_before)
 
             # Try to replay - create new connection with same message
@@ -375,9 +375,9 @@ class TestServerStatistics:
             ready_event.wait(timeout=5)
             time.sleep(1)
 
-            # Create and connect a single sender
+            # Create and connect a single sender (agent_id must match certificate CN: agent-001)
             sender = SecureSender(
-                agent_id="client-001",
+                agent_id="agent-001",
                 server_host=TEST_HOST,
                 server_port=TEST_PORT,
                 ca_cert_path=TEST_CA_CERT,

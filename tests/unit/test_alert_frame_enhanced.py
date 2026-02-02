@@ -12,10 +12,18 @@ import time
 import tempfile
 
 # Try to import tkinter, skip tests if not available
+HAS_TKINTER = False
 try:
     import tkinter as tk
     from tkinter import ttk
-    HAS_TKINTER = True
+    # Try to actually create a test window to verify Tk works
+    try:
+        _test_root = tk.Tk()
+        _test_root.withdraw()
+        _test_root.destroy()
+        HAS_TKINTER = True
+    except Exception:
+        HAS_TKINTER = False
 except Exception:
     HAS_TKINTER = False
 
@@ -40,8 +48,11 @@ class TestAlertFrameFilters(unittest.TestCase):
         self.db.connect()
 
         # Create root window
-        self.root = tk.Tk()
-        self.root.withdraw()
+        try:
+            self.root = tk.Tk()
+            self.root.withdraw()
+        except Exception as e:
+            self.skipTest(f"Cannot create Tk window: {e}")
 
         # Create alert frame
         self.frame = AlertFrame(self.root, self.db)
