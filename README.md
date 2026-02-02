@@ -82,6 +82,20 @@ On each monitored endpoint:
 python agent\agent.py --server-host <SERVER_IP> --server-port 9000 --agent-id agent-001
 ```
 
+## 🧭 Demo Runner
+
+For a guided demo (server + GUI + 3 agents), run:
+
+```powershell
+./run_demo.ps1
+```
+
+To stop all demo processes:
+
+```powershell
+./stop_demo.ps1
+```
+
 ## 📁 Project Structure
 
 ```text
@@ -202,6 +216,23 @@ View coverage report: `htmlcov\index.html`
 - Select date range and destination
 
 ## 📊 Configuration
+
+### Config Files + .env Overrides
+
+- **Primary server config**: `server/config.yaml`
+- **Environment overrides**: `.env` (loaded by the server, GUI, agent, and tests)
+
+Environment variables follow `HONEYGRID_SECTION_SUBSECTION_KEY` (e.g., `HONEYGRID_NOTIFICATIONS_DISCORD_AVATAR_URL`).
+
+### Notification Branding
+
+You can set a **Discord avatar** and **email logo** with public image URLs:
+
+- `notifications.discord.avatar_url` in `server/config.yaml`
+- `notifications.email.logo_url` in `server/config.yaml`
+- or via `.env`:
+  - `HONEYGRID_NOTIFICATIONS_DISCORD_AVATAR_URL`
+  - `HONEYGRID_NOTIFICATIONS_EMAIL_LOGO_URL`
 
 ### Agent Configuration (`agent\config.py`)
 
