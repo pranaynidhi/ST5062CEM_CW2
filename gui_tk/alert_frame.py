@@ -147,8 +147,10 @@ class AlertFrame(ttk.Frame):
         self.tree.bind("<Double-1>", self._on_double_click)
 
         # Tag configuration for colors
-        self.tree.tag_configure("warning", background="#fff3cd")
-        self.tree.tag_configure("danger", background="#f8d7da")
+        # Warning tags: light yellow background with dark text
+        self.tree.tag_configure("warning", background="#fff3cd", foreground="#000000")
+        # Danger tags: light pink background with dark text
+        self.tree.tag_configure("danger", background="#f8d7da", foreground="#000000")
 
     def set_database(self, db):
         """Set database connection."""
