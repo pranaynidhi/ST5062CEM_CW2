@@ -112,7 +112,7 @@ class ClientHandler:
         self.is_authenticated = False
         self.message_count = 0
         
-        # Get client certificate info
+        # Get agent certificate info
         ssl_object = writer.get_extra_info('ssl_object')
         if ssl_object:
             peer_cert = ssl_object.getpeercert()
@@ -477,7 +477,7 @@ class HoneyGridServer:
         # Load CA certificate for client verification
         context.load_verify_locations(str(self.ca_cert_path))
         
-        # Require client certificates (mutual TLS)
+        # Require agent certificates (mutual TLS)
         context.verify_mode = ssl.CERT_REQUIRED
         
         # Use strong ciphers only
