@@ -213,54 +213,54 @@ class EmailNotifier(Notifier):
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-        body {{ font-family: "Segoe UI", Arial, sans-serif; background: #0f1115; margin: 0; padding: 0; color: #222; }}
-        .wrapper {{ padding: 24px; }}
-        .card {{ max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }}
-        .header {{ background: {color}; color: #ffffff; padding: 22px 24px; }}
-        .header h1 {{ margin: 0; font-size: 20px; letter-spacing: 0.3px; }}
-        .header p {{ margin: 6px 0 0; font-size: 13px; opacity: 0.9; }}
-        .content {{ padding: 22px 24px 10px; background: #f7f8fb; }}
-        .pill {{ display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 999px; font-size: 12px; }}
-        .grid {{ display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; background: #ffffff; border-radius: 12px; padding: 16px; border: 1px solid #eceff4; }}
-        .label {{ font-weight: 600; color: #4b5563; }}
-        .value {{ color: #111827; word-break: break-all; }}
-        .accent {{ border-left: 4px solid {color}; padding-left: 12px; margin: 12px 0 16px; }}
-        .footer {{ padding: 14px 24px 22px; font-size: 12px; color: #6b7280; background: #ffffff; }}
-        .logo {{ text-align: center; margin: 4px 0 14px; }}
-        .logo img {{ width: 64px; height: 64px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }}
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <div class="card">
-            <div class="header">
-                <h1>HoneyGrid Alert</h1>
-                <p><span class="pill">Severity: {severity.name}</span></p>
-            </div>
-            <div class="content">
-                <div class="logo">{logo_html}</div>
-                <div class="accent">
-                    A honeytoken was triggered. Review the details below.
-                </div>
-                <div class="grid">
-                    <div class="label">Time</div>
-                    <div class="value">{time_str}</div>
-                    <div class="label">Agent</div>
-                    <div class="value">{agent_id}</div>
-                    <div class="label">Token</div>
-                    <div class="value">{token_id}</div>
-                    <div class="label">Action</div>
-                    <div class="value">{event_type.upper()}</div>
-                    <div class="label">Path</div>
-                    <div class="value">{path}</div>
-                </div>
-            </div>
-            <div class="footer">
-                This is an automated alert from HoneyGrid. Do not reply to this email.
-            </div>
-        </div>
-    </div>
+<body style="margin:0; padding:0; background:#f5f7fb;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f5f7fb;">
+        <tr>
+            <td align="center" style="padding:24px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="620" style="max-width:620px; background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e6eaf2;">
+                    <tr>
+                        <td style="background:{color}; padding:18px 22px; color:#ffffff; font-family:Segoe UI, Arial, sans-serif;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="font-size:18px; font-weight:700;">HoneyGrid Alert</td>
+                                    <td align="right" style="font-size:12px;">
+                                        <span style="background:rgba(255,255,255,0.2); padding:4px 10px; border-radius:999px;">Severity: {severity.name}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 22px; font-family:Segoe UI, Arial, sans-serif; color:#111827;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding-bottom:14px;">{logo_html}</td>
+                                </tr>
+                                <tr>
+                                    <td style="border-left:4px solid {color}; padding:8px 12px; background:#f8fafc; border-radius:8px; font-size:13px; color:#374151;">
+                                        A honeytoken was triggered. Review the details below.
+                                    </td>
+                                </tr>
+                            </table>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                <tr><td style="padding:10px 14px; background:#ffffff; border-bottom:1px solid #eef2f7;"><strong>Time</strong><br />{time_str}</td></tr>
+                                <tr><td style="padding:10px 14px; background:#ffffff; border-bottom:1px solid #eef2f7;"><strong>Agent</strong><br />{agent_id}</td></tr>
+                                <tr><td style="padding:10px 14px; background:#ffffff; border-bottom:1px solid #eef2f7;"><strong>Token</strong><br />{token_id}</td></tr>
+                                <tr><td style="padding:10px 14px; background:#ffffff; border-bottom:1px solid #eef2f7;"><strong>Action</strong><br />{event_type.upper()}</td></tr>
+                                <tr><td style="padding:10px 14px; background:#ffffff;"><strong>Path</strong><br /><span style="font-family:Consolas, monospace; font-size:12px; word-break:break-all;">{path}</span></td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:14px 22px 20px; font-family:Segoe UI, Arial, sans-serif; font-size:12px; color:#6b7280;">
+                            This is an automated alert from HoneyGrid. Do not reply to this email.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
 """
@@ -363,42 +363,50 @@ class EmailNotifier(Notifier):
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-        body {{ font-family: "Segoe UI", Arial, sans-serif; background: #0f1115; margin: 0; padding: 0; color: #222; }}
-        .wrapper {{ padding: 24px; }}
-        .card {{ max-width: 720px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }}
-        .header {{ background: #1f2937; color: #ffffff; padding: 22px 24px; }}
-        .header h1 {{ margin: 0; font-size: 20px; letter-spacing: 0.3px; }}
-        .header p {{ margin: 6px 0 0; font-size: 13px; opacity: 0.9; }}
-        .content {{ padding: 22px 24px 10px; background: #f7f8fb; }}
-        .logo {{ text-align: center; margin: 4px 0 14px; }}
-        .logo img {{ width: 64px; height: 64px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }}
-        .summary {{ background: #ffffff; border-radius: 12px; padding: 14px 16px; border: 1px solid #eceff4; }}
-        .events-title {{ margin: 18px 0 8px; font-size: 16px; color: #111827; }}
-        .footer {{ padding: 14px 24px 22px; font-size: 12px; color: #6b7280; background: #ffffff; }}
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <div class="card">
-            <div class="header">
-                <h1>HoneyGrid Alert Digest</h1>
-                <p>Total Events: {len(events)}</p>
-            </div>
-            <div class="content">
-                <div class="logo">{logo_html}</div>
-                <div class="summary">
-                    <h3 style="margin: 0 0 6px;">Summary by Severity</h3>
-                    <ul style="margin: 0; padding-left: 18px;">{severity_summary}</ul>
-                </div>
-                <div class="events-title">Event Details</div>
-                {events_html}
-            </div>
-            <div class="footer">
-                This is an automated digest from HoneyGrid. Do not reply to this email.
-            </div>
-        </div>
-    </div>
+<body style="margin:0; padding:0; background:#f5f7fb;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f5f7fb;">
+        <tr>
+            <td align="center" style="padding:24px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="720" style="max-width:720px; background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e6eaf2;">
+                    <tr>
+                        <td style="background:#1f2937; padding:18px 22px; color:#ffffff; font-family:Segoe UI, Arial, sans-serif;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="font-size:18px; font-weight:700;">HoneyGrid Alert Digest</td>
+                                    <td align="right" style="font-size:12px;">Total Events: {len(events)}</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 22px; font-family:Segoe UI, Arial, sans-serif; color:#111827;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding-bottom:14px;">{logo_html}</td>
+                                </tr>
+                            </table>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                <tr>
+                                    <td style="padding:12px 14px; background:#ffffff;">
+                                        <strong>Summary by Severity</strong>
+                                        <ul style="margin: 8px 0 0; padding-left: 18px;">{severity_summary}</ul>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div style="margin-top:16px; font-size:14px; font-weight:600;">Event Details</div>
+                            <div style="margin-top:8px;">{events_html}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:14px 22px 20px; font-family:Segoe UI, Arial, sans-serif; font-size:12px; color:#6b7280;">
+                            This is an automated digest from HoneyGrid. Do not reply to this email.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
 """
