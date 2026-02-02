@@ -1,0 +1,57 @@
+# HoneyGrid Server Configuration
+# This file configures the HoneyGrid server behavior
+
+server:
+  host: "0.0.0.0"
+  port: 9000
+
+  # TLS/SSL Configuration
+  ca_cert: "certs/ca.crt"
+  server_cert: "certs/server.crt"
+  server_key: "certs/server.key"
+
+  # Database Configuration
+  database:
+    path: "data/honeygrid.db"
+    password: "change_this_password"
+
+  # Security Configuration
+  security:
+    max_nonce_cache: 1000
+    timestamp_tolerance: 60 # seconds
+    rate_limit_per_agent: 100 # events per minute
+
+# Notification Configuration
+notifications:
+  enabled: true
+  rate_limit_seconds: 60
+  batch_mode: false
+  batch_interval_seconds: 3600
+  min_severity: "low" # info, low, medium, high, critical
+
+  # Email notifications
+  email:
+    enabled: false
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_username: "your-email@gmail.com"
+    smtp_password: "your-app-password"
+    from_address: "honeygrid@example.com"
+    to_addresses:
+      - "security-team@example.com"
+      - "admin@example.com"
+    use_tls: true
+
+  # Discord notifications
+  discord:
+    enabled: false
+    webhook_url: "https://discord.com/api/webhooks/YOUR/WEBHOOK/URL"
+    username: "HoneyGrid Bot"
+    avatar_url: ""
+
+# Logging Configuration
+logging:
+  level: "INFO" # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "logs/honeygrid_server.log"
+  max_bytes: 10485760 # 10 MB
+  backup_count: 5
