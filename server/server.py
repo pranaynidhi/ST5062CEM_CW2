@@ -28,6 +28,7 @@ from server.protocol import (
 from server.db import DatabaseManager
 from server.notifiers import EmailNotifier, DiscordNotifier, NotificationConfig, Severity
 from server.config_loader import load_config, get_nested_value, DEFAULT_SERVER_CONFIG
+from utils.env_loader import load_env
 
 
 # Configure logging
@@ -36,6 +37,9 @@ logging.basicConfig(
     format='[%(asctime)s] %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Load environment variables from .env if available
+load_env()
 
 
 class LRUCache:

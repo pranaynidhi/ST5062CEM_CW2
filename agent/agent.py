@@ -20,6 +20,7 @@ from typing import List, Dict, Optional
 
 from agent.monitor import FSMonitor, MonitorEvent
 from agent.sender import SenderProcess
+from utils.env_loader import load_env
 
 
 # Configure logging
@@ -28,6 +29,9 @@ logging.basicConfig(
     format='[%(asctime)s] %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Load environment variables from .env if available
+load_env()
 
 
 class HoneyGridAgent:

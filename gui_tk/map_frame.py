@@ -92,6 +92,7 @@ class MapFrame(ttk.Frame):
         """Draw network map."""
         # Clear canvas
         self.canvas.delete("all")
+        self.node_ids = {}
         
         if not self.agents:
             # Show "No agents" message
@@ -162,7 +163,7 @@ class MapFrame(ttk.Frame):
         color = self.colors.get(status, self.colors['offline'])
         
         # Draw circle
-        node_id = self.canvas.create_oval(
+        circle_id = self.canvas.create_oval(
             x - radius,
             y - radius,
             x + radius,
@@ -173,7 +174,7 @@ class MapFrame(ttk.Frame):
         )
         
         # Draw agent ID text
-        self.canvas.create_text(
+        label_id = self.canvas.create_text(
             x,
             y - 5,
             text=agent_id,
@@ -189,7 +190,7 @@ class MapFrame(ttk.Frame):
             "offline": "○"
         }
         icon = status_icons.get(status, "?")
-        self.canvas.create_text(
+        icon_id = self.canvas.create_text(
             x,
             y + 8,
             text=icon,
@@ -199,7 +200,7 @@ class MapFrame(ttk.Frame):
         
         # Draw status text below
         status_text = status.upper()
-        self.canvas.create_text(
+        status_id = self.canvas.create_text(
             x,
             y + radius + 15,
             text=status_text,
@@ -207,11 +208,19 @@ class MapFrame(ttk.Frame):
             font=("Arial", 8)
         )
         
-        # Store canvas ID
-        self.node_ids[agent_id] = node_id
+        # Store canvas IDs
+        self.node_ids[agent_id] = {
+            "circle": circle_id,
+            "label": label_id,
+            "icon": icon_id,
+            "status": status_id
+        }
         
         # Bind click event
-        self.canvas.tag_bind(node_id, "<Button-1>", lambda e: self._on_node_click(agent_id))
+        self.canvas.tag_bind(circle_id, "<Button-1>", lambda e: self._on_node_click(agent_id))
+        self.canvas.tag_bind(label_id, "<Button-1>", lambda e: self._on_node_click(agent_id))
+        self.canvas.tag_bind(icon_id, "<Button-1>", lambda e: self._on_node_click(agent_id))
+        self.canvas.tag_bind(status_id, "<Button-1>", lambda e: self._on_node_click(agent_id))
     
     def _update_node(self, agent_id: str):
         """Update existing node appearance."""
@@ -232,9 +241,26 @@ class MapFrame(ttk.Frame):
         status = agent.get('status', 'offline')
         color = self.colors.get(status, self.colors['offline'])
         
-        # Update node color
-        node_id = self.node_ids[agent_id]
-        self.canvas.itemconfig(node_id, fill=color)
+        node_ids = self.node_ids.get(agent_id, {})
+        circle_id = node_ids.get("circle")
+        icon_id = node_ids.get("icon")
+        status_id = node_ids.get("status")
+
+        if circle_id:
+            self.canvas.itemconfig(circle_id, fill=color)
+
+        status_icons = {
+            "healthy": "●",
+            "warning": "▲",
+            "triggered": "✖",
+            "offline": "○"
+        }
+        icon = status_icons.get(status, "?")
+
+        if icon_id:
+            self.canvas.itemconfig(icon_id, text=icon)
+        if status_id:
+            self.canvas.itemconfig(status_id, text=status.upper(), fill=color)
     
     def _on_node_click(self, agent_id: str):
         """

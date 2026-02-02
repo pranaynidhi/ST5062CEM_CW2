@@ -6,7 +6,11 @@ Runs all tests and generates coverage reports.
 
 import sys
 import subprocess
-from pathlib import Path
+
+from utils.env_loader import load_env
+
+# Load environment variables from .env if available
+load_env()
 
 
 def run_tests(test_paths=None, coverage=True, verbose=True, html=True):
