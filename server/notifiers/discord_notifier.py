@@ -145,7 +145,7 @@ class DiscordNotifier(Notifier):
         for severity in [Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.INFO]:
             count = severity_counts.get(severity, 0)
             if count > 0:
-                summary_lines.append(f"{severity.value.upper()}: {count}")
+                summary_lines.append(f"{severity.name}: {count}")
         summary_text = "\n".join(summary_lines)
         event_lines = []
         for i, event in enumerate(events[:10], 1):
