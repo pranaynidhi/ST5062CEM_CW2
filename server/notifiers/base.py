@@ -222,7 +222,7 @@ class Notifier(ABC):
         severity = Severity.from_event_type(event_type)
         
         return (
-            f"🚨 HONEYTOKEN TRIGGERED [{severity.value.upper()}]\n"
+            f"🚨 HONEYTOKEN TRIGGERED [{severity.name}]\n"
             f"Time: {time_str}\n"
             f"Agent: {agent_id}\n"
             f"Token: {token_id}\n"

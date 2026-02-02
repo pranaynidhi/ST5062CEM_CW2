@@ -203,6 +203,7 @@ class AlertFrame(ttk.Frame):
         
         # Use filtered_events if available, otherwise all events
         events_to_display = self.filtered_events if hasattr(self, 'filtered_events') else self.events
+        self.display_events = events_to_display
         
         # Add events (most recent first)
         for event in events_to_display:
@@ -244,11 +245,11 @@ class AlertFrame(ttk.Frame):
         item = selection[0]
         item_index = self.tree.index(item)
         
-        if item_index >= len(self.events):
+        if item_index >= len(self.display_events) if hasattr(self, 'display_events') else len(self.events):
             return
         
         # Get event data
-        event_data = self.events[item_index]
+        event_data = self.display_events[item_index] if hasattr(self, 'display_events') else self.events[item_index]
         
         # Show details dialog
         self._show_event_details(event_data)

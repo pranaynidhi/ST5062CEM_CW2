@@ -215,7 +215,7 @@ class EmailNotifier(Notifier):
     <div class="container">
         <div class="header">
             <h2>🚨 HoneyGrid Alert</h2>
-            <p style="margin: 0; font-size: 14px;">Severity: {severity.value.upper()}</p>
+            <p style="margin: 0; font-size: 14px;">Severity: {severity.name}</p>
         </div>
         <div class="content">
             <div class="info-row">
@@ -265,7 +265,7 @@ class EmailNotifier(Notifier):
         for severity in Severity:
             count = severity_counts.get(severity, 0)
             if count > 0:
-                header += f"  {severity.value.upper()}: {count}\n"
+                header += f"  {severity.name}: {count}\n"
         
         header += "\n" + "=" * 50 + "\n\n"
         
@@ -322,7 +322,7 @@ class EmailNotifier(Notifier):
             
             events_html += f"""
             <div class="event-item" style="margin: 15px 0; padding: 15px; background: white; border-left: 4px solid {color};">
-                <h4 style="margin: 0 0 10px 0;">Event {i} - {severity.value.upper()}</h4>
+                <h4 style="margin: 0 0 10px 0;">Event {i} - {severity.name}</h4>
                 <p style="margin: 5px 0;"><strong>Time:</strong> {time_str}</p>
                 <p style="margin: 5px 0;"><strong>Agent:</strong> {agent_id}</p>
                 <p style="margin: 5px 0;"><strong>Token:</strong> {token_id}</p>
