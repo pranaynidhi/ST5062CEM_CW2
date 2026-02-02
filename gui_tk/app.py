@@ -24,6 +24,7 @@ from gui_tk.map_frame import MapFrame
 from gui_tk.alert_frame import AlertFrame
 from gui_tk.stats_frame import StatsFrame
 from gui_tk.deploy_dialog import show_deploy_dialog
+from gui_tk.theme import get_theme_manager, apply_theme_to_widget
 
 # Load environment variables from .env if available
 load_env()
@@ -55,10 +56,17 @@ class HoneyGridApp:
         # Database connection
         self.db = None
 
+        # Theme manager
+        self.theme_manager = get_theme_manager()
+        self.current_theme = self.theme_manager.get_theme()
+
         # Main window
         self.root = tk.Tk()
         self.root.title("HoneyGrid Dashboard")
         self.root.geometry("1200x700")
+
+        # Apply initial theme to window
+        self.root.config(bg=self.current_theme["bg"])
 
         # Set window icon (if available)
         try:
@@ -77,6 +85,7 @@ class HoneyGridApp:
         # Style
         self.style = ttk.Style()
         self.style.theme_use("clam")
+        self._apply_ttk_theme()
 
         # Components
         self.map_frame = None
@@ -117,6 +126,13 @@ class HoneyGridApp:
         menubar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Refresh Agents", command=self._refresh_agents)
         view_menu.add_command(label="Clear Alerts", command=self._clear_alerts)
+        view_menu.add_separator()
+        # Add theme toggle menu item first
+        view_menu.add_command(label="Toggle Dark Mode", command=self._toggle_theme)
+        # Store reference to theme toggle menu item for dynamic label updates
+        self.theme_menu_item = view_menu
+        self.theme_menu_index = view_menu.index("end")
+        self._update_theme_menu_label()
 
         # Actions menu
         actions_menu = tk.Menu(menubar, tearoff=0)
@@ -134,6 +150,9 @@ class HoneyGridApp:
             self.root, text="Ready", relief=tk.SUNKEN, anchor=tk.W
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Register for theme changes
+        self.theme_manager.register_callback(self._on_theme_change)
 
         # Main container with PanedWindow
         # Server warning banner (hidden by default)
@@ -554,6 +573,129 @@ class HoneyGridApp:
                 return True
         except OSError:
             return False
+
+    def _set_status(self, message: str):
+        """Update status bar."""
+        self.status_bar.config(text=message)
+
+    def _update_server_status(self):
+        """Update server status banner and status bar hint."""
+        if self._is_server_running():
+            if self.server_banner.winfo_ismapped():
+                self.server_banner.pack_forget()
+            # Only overwrite status if it's a server warning
+            if self.status_bar.cget("text").startswith("⚠️ Server"):
+                self._set_status("Ready")
+        else:
+            if not self.server_banner.winfo_ismapped():
+                self.server_banner.pack(fill=tk.X, padx=5, pady=(5, 0))
+            self._set_status("⚠️ Server not running")
+
+    def _apply_ttk_theme(self):
+        """Apply theme to ttk widgets."""
+        theme = self.current_theme
+        
+        # Configure ttk styles
+        style = self.style
+        
+        # Background and foreground colors
+        bg = theme.get("frame_bg", theme["bg"])
+        fg = theme.get("label_fg", theme["fg"])
+        tree_bg = theme.get("tree_bg", bg)
+        tree_fg = theme.get("tree_fg", fg)
+        tree_field_bg = theme.get("tree_field_bg", tree_bg)
+        tree_field_fg = theme.get("tree_field_fg", tree_fg)
+        button_bg = theme.get("button_bg", bg)
+        
+        style.configure("TFrame", background=bg)
+        style.configure("TLabel", background=bg, foreground=fg)
+        style.configure("TButton", background=button_bg, foreground=fg)
+        style.map("TButton", background=[('active', theme.get("highlight", "#0078d4"))])
+        style.configure("TEntry", background=tree_field_bg, foreground=tree_field_fg, 
+                       insertcolor=tree_field_fg, fieldbackground=tree_field_bg)
+        style.map("TEntry", foreground=[('focus', tree_field_fg)])
+        
+        # Treeview styling - more comprehensive
+        style.configure("Treeview", 
+                       background=tree_bg, 
+                       foreground=tree_fg,
+                       fieldbackground=tree_field_bg,
+                       borderwidth=0)
+        style.configure("Treeview.Heading", 
+                       background=tree_field_bg, 
+                       foreground=tree_fg,
+                       borderwidth=1)
+        style.map("Treeview.Heading",
+                 background=[('active', theme.get("highlight", "#0078d4"))])
+        
+        style.configure("TNotebook", background=bg)
+        style.configure("TNotebook.Tab", background=bg, foreground=fg)
+        style.map("TNotebook.Tab", 
+                 background=[('selected', bg), ('active', button_bg)])
+        style.configure("TMenubutton", background=bg, foreground=fg)
+
+    def _update_theme_menu_label(self):
+        """Update theme toggle menu item label based on current theme."""
+        if self.theme_manager.is_dark_mode():
+            label = "Toggle Light Mode"
+        else:
+            label = "Toggle Dark Mode"
+        self.theme_menu_item.entryconfig(self.theme_menu_index, label=label)
+
+    def _toggle_theme(self):
+        """Toggle between light and dark theme."""
+        self.theme_manager.toggle_theme()
+
+    def _on_theme_change(self, new_theme):
+        """Handle theme change."""
+        try:
+            self.current_theme = new_theme
+            
+            # Update main window
+            self.root.config(bg=new_theme["bg"])
+            
+            # Update status bar
+            try:
+                self.status_bar.config(bg=new_theme.get("statusbar_bg", new_theme["bg"]), 
+                                      fg=new_theme.get("statusbar_fg", new_theme["fg"]))
+            except tk.TclError:
+                pass  # Widget might not exist yet
+            
+            # Update server banner
+            try:
+                warning_bg = new_theme.get("warning_bg", "#fff3cd")
+                warning_fg = new_theme.get("warning_fg", "#856404")
+                self.server_banner.config(background=warning_bg, foreground=warning_fg)
+            except tk.TclError:
+                pass  # Widget might not exist yet
+            
+            # Reapply ttk theme
+            self._apply_ttk_theme()
+            
+            # Update all frames (ttk.Frame uses style, not direct config)
+            # Just refresh the frames to redraw with new styling
+            if self.map_frame and self.map_frame.winfo_exists():
+                try:
+                    self.map_frame.refresh()
+                except Exception:
+                    pass
+            if self.alert_frame and self.alert_frame.winfo_exists():
+                try:
+                    self.alert_frame.refresh()
+                except Exception:
+                    pass
+            if self.stats_frame and self.stats_frame.winfo_exists():
+                try:
+                    self.stats_frame.refresh()
+                except Exception:
+                    pass
+            
+            # Update menu label
+            self._update_theme_menu_label()
+            
+            self._set_status(f"Theme changed to {self.theme_manager.current_theme.upper()}")
+        except Exception as e:
+            print(f"Error in theme change callback: {e}")
 
     def _set_status(self, message: str):
         """Update status bar."""
