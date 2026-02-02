@@ -17,12 +17,14 @@ cd "D:\College\ST5062CEM Programming and Algorithms 2\ST5062CEM_CW2"
 # Activate virtual environment
 .venv\Scripts\activate
 
-# Install dependencies (already done)
+# Install dependencies
 pip install -r requirements.txt
 
-# Generate SSL certificates (already done)
+# Generate SSL certificates
 python scripts\generate_certs.py
 ```
+
+Optional: configure settings in `server/config.yaml` and/or `.env`.
 
 ## 📋 Running the System
 
@@ -76,10 +78,10 @@ python agent\agent.py ^
     --agent-id agent-001 ^
     --server-host localhost ^
     --watch-path C:\honeytokens ^
-    --token-id token-001 ^
-    --client-cert certs\client_client-001.crt ^
-    --client-key certs\client_client-001.key
+  --token-id token-001
 ```
+
+By default, the agent uses `certs\client_<agent-id>.crt` and `certs\client_<agent-id>.key`.
 
 Expected output:
 
@@ -126,6 +128,20 @@ notepad C:\honeytokens\secret.txt
 6. **Check server logs** - Shows event details
 7. **Export alerts** - Click "Export CSV" in GUI
 
+### Demo Runner
+
+Start the full demo (server + GUI + 3 agents):
+
+```powershell
+./run_demo.ps1
+```
+
+Stop all demo processes:
+
+```powershell
+./stop_demo.ps1
+```
+
 ### Component Tests
 
 ```cmd
@@ -140,6 +156,12 @@ python gui_tk\map_frame.py
 
 # Test alert frame
 python gui_tk\alert_frame.py
+```
+
+### Bulk Modification Test (PowerShell)
+
+```powershell
+for ($i = 0; $i -lt 5; $i++) { Add-Content "$env:TEMP\honeygrid_demo\roadmap.txt" "Edit $i" }
 ```
 
 ## 📊 GUI Features
@@ -245,9 +267,9 @@ python scripts\generate_certs.py 3
 
 This creates:
 
-- `client_client-001.crt/key`
-- `client_client-002.crt/key`
-- `client_client-003.crt/key`
+- `client_agent-001.crt/key`
+- `client_agent-002.crt/key`
+- `client_agent-003.crt/key`
 
 **Start multiple agents:**
 
