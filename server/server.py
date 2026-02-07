@@ -238,6 +238,13 @@ class ClientHandler:
                 nonce=message.header.nonce,
                 timestamp=message.header.timestamp,
                 data=data,
+                process_name=data.get("process_name"),
+                process_id=data.get("process_id"),
+                process_user=data.get("process_user"),
+                process_cmdline=data.get("process_cmdline"),
+                file_hash_original=data.get("file_hash_original"),
+                file_hash_current=data.get("file_hash_current"),
+                content_modified=data.get("content_modified", False),
             )
 
             logger.info(f"[{self.agent_id}] Event stored with ID: {event_id}")

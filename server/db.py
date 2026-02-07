@@ -11,6 +11,7 @@ import sqlite3
 import os
 import json
 import time
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
@@ -18,6 +19,8 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseError(Exception):
@@ -121,6 +124,13 @@ class DatabaseManager:
                 timestamp INTEGER,
                 nonce TEXT UNIQUE,
                 data TEXT,
+                process_name TEXT,
+                process_id INTEGER,
+                process_user TEXT,
+                process_cmdline TEXT,
+                file_hash_original TEXT,
+                file_hash_current TEXT,
+                content_modified INTEGER DEFAULT 0,
                 FOREIGN KEY (agent_id) REFERENCES agents(agent_id)
             )
         """)
@@ -154,7 +164,40 @@ class DatabaseManager:
             ON events(nonce)
         """)
 
+        # Add new columns if they don't exist (migration support)
+        self._migrate_enhanced_columns(cursor)
+
         self.connection.commit()
+
+    def _migrate_enhanced_columns(self, cursor):
+        """Add enhanced monitoring columns to existing events table if needed."""
+        try:
+            # Check if process_name column exists
+            cursor.execute("PRAGMA table_info(events)")
+            columns = {row[1] for row in cursor.fetchall()}
+            
+            # Add missing columns for enhanced monitoring
+            enhanced_columns = {
+                'process_name': 'TEXT',
+                'process_id': 'INTEGER',
+                'process_user': 'TEXT',
+                'process_cmdline': 'TEXT',
+                'file_hash_original': 'TEXT',
+                'file_hash_current': 'TEXT',
+                'content_modified': 'INTEGER DEFAULT 0',
+            }
+            
+            for col_name, col_type in enhanced_columns.items():
+                if col_name not in columns:
+                    logger.info(f"Adding enhanced monitoring column: {col_name}")
+                    try:
+                        cursor.execute(f"ALTER TABLE events ADD COLUMN {col_name} {col_type}")
+                    except sqlite3.OperationalError as e:
+                        logger.warning(f"Column {col_name} might already exist: {e}")
+            
+            self.connection.commit()
+        except Exception as e:
+            logger.warning(f"Enhanced columns migration check failed: {e}")
 
     def close(self):
         """Close database connection."""
@@ -296,6 +339,13 @@ class DatabaseManager:
         nonce: str,
         timestamp: int = None,
         data: Dict[str, Any] = None,
+        process_name: Optional[str] = None,
+        process_id: Optional[int] = None,
+        process_user: Optional[str] = None,
+        process_cmdline: Optional[str] = None,
+        file_hash_original: Optional[str] = None,
+        file_hash_current: Optional[str] = None,
+        content_modified: bool = False,
     ) -> int:
         """
         Insert a new event.
@@ -308,6 +358,13 @@ class DatabaseManager:
             nonce: Unique nonce for replay protection
             timestamp: Event timestamp (defaults to current time)
             data: Additional event data
+            process_name: Name of accessing process
+            process_id: PID of accessing process
+            process_user: User running the process
+            process_cmdline: Command line of process
+            file_hash_original: Original file hash
+            file_hash_current: Current file hash
+            content_modified: Whether content changed
 
         Returns:
             Event ID
@@ -329,8 +386,10 @@ class DatabaseManager:
             cursor.execute(
                 """
                 INSERT INTO events 
-                (agent_id, token_id, path, event_type, timestamp, nonce, data)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (agent_id, token_id, path, event_type, timestamp, nonce, data,
+                 process_name, process_id, process_user, process_cmdline,
+                 file_hash_original, file_hash_current, content_modified)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     agent_id,
@@ -340,6 +399,13 @@ class DatabaseManager:
                     timestamp,
                     nonce,
                     encrypted_data,
+                    process_name,
+                    process_id,
+                    process_user,
+                    process_cmdline,
+                    file_hash_original,
+                    file_hash_current,
+                    1 if content_modified else 0,
                 ),
             )
 

@@ -35,10 +35,126 @@ class MonitorEvent:
     timestamp: float  # Event timestamp
     is_directory: bool  # True if target is a directory
     metadata: Dict[str, Any]  # Additional metadata
+    
+    process_name: Optional[str] = None  # Name of process that accessed the file
+    process_id: Optional[int] = None  # PID of accessing process
+    process_user: Optional[str] = None  # User running the process
+    process_cmdline: Optional[str] = None  # Command line of the process
+    file_hash_original: Optional[str] = None  # Original file hash (SHA256)
+    file_hash_current: Optional[str] = None  # Current file hash (SHA256)
+    content_modified: bool = False  # Whether file content changed
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return asdict(self)
+
+
+class FileHashTracker:
+    """    
+    Uses SHA256 checksums to detect when honeytoken content is modified,
+    allowing detection of file access that changes content.
+    """
+
+    def __init__(self):
+        """Initialize hash tracker with empty cache."""
+        self.file_hashes = {}  # file_path -> hash_value
+
+    def calculate_hash(self, file_path: str) -> Optional[str]:
+        """
+        Calculate SHA256 hash of file contents.
+
+        Args:
+            file_path: Path to file
+
+        Returns:
+            Hex-encoded SHA256 hash or None if file cannot be read
+        """
+        try:
+            import hashlib
+
+            sha256_hash = hashlib.sha256()
+
+            # Read file in chunks to handle large files efficiently
+            with open(file_path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    sha256_hash.update(chunk)
+
+            return sha256_hash.hexdigest()
+
+        except (IOError, OSError) as e:
+            logger.debug(f"Failed to calculate hash for {file_path}: {e}")
+            return None
+
+    def get_original_hash(self, file_path: str) -> Optional[str]:
+        """
+        Get the original (stored) hash for a file.
+
+        Args:
+            file_path: Path to file
+
+        Returns:
+            Original hash or None if not stored
+        """
+        return self.file_hashes.get(file_path)
+
+    def store_hash(self, file_path: str, hash_value: Optional[str] = None) -> Optional[str]:
+        """
+        Store hash for a file.
+
+        Args:
+            file_path: Path to file
+            hash_value: Hash to store (if None, calculate it)
+
+        Returns:
+            Stored hash value
+        """
+        if hash_value is None:
+            hash_value = self.calculate_hash(file_path)
+
+        if hash_value:
+            self.file_hashes[file_path] = hash_value
+            logger.debug(f"Stored hash for {file_path}: {hash_value[:16]}...")
+
+        return hash_value
+
+    def has_content_changed(self, file_path: str) -> bool:
+        """
+        Check if file content has changed since original hash was stored.
+
+        Args:
+            file_path: Path to file
+
+        Returns:
+            True if content changed or file is new/deleted
+        """
+        current_hash = self.calculate_hash(file_path)
+        original_hash = self.get_original_hash(file_path)
+
+        # If no original hash, consider it unchanged (first time seeing it)
+        if original_hash is None:
+            return False
+
+        # If current hash is None (file deleted/unreadable), consider it changed
+        if current_hash is None:
+            return True
+
+        # Compare hashes
+        return current_hash != original_hash
+
+    def get_hash_pair(self, file_path: str) -> tuple:
+        """
+        Get original and current hash for a file.
+
+        Args:
+            file_path: Path to file
+
+        Returns:
+            Tuple of (original_hash, current_hash)
+        """
+        original_hash = self.get_original_hash(file_path)
+        current_hash = self.calculate_hash(file_path)
+
+        return (original_hash, current_hash)
 
 
 class HoneytokenHandler(FileSystemEventHandler):
@@ -66,6 +182,17 @@ class HoneytokenHandler(FileSystemEventHandler):
         self.normalized_mapping = {
             str(Path(p).resolve()): token_id for p, token_id in token_mapping.items()
         }
+        
+        # Enhanced monitoring capabilities
+        self.hash_tracker = FileHashTracker()  # Track file hashes for content detection
+        
+        # Import ProcessCapture for process information capture
+        try:
+            from agent.process_info import ProcessCapture
+            self.process_capture = ProcessCapture()
+        except ImportError:
+            logger.warning("ProcessCapture not available, process info will not be captured")
+            self.process_capture = None
 
     def _get_token_id(self, path: str) -> Optional[str]:
         """Get token ID for a given path."""
@@ -113,6 +240,37 @@ class HoneytokenHandler(FileSystemEventHandler):
         if not token_id:
             return None
 
+        process_info = {}
+        if self.process_capture and not is_directory:
+            try:
+                proc_details = self.process_capture.get_process_by_file_access(src_path)
+                if proc_details:
+                    process_info = proc_details
+            except Exception as e:
+                logger.debug(f"Process capture failed: {e}")
+
+        file_hash_original = None
+        file_hash_current = None
+        content_modified = False
+        
+        if not is_directory and event_type in ["modified", "opened", "accessed"]:
+            try:
+                file_hash_current = self.hash_tracker.calculate_hash(src_path)
+                file_hash_original = self.hash_tracker.get_original_hash(src_path)
+                content_modified = self.hash_tracker.has_content_changed(src_path)
+                
+                # Store the current hash for future comparisons
+                if file_hash_current:
+                    self.hash_tracker.store_hash(src_path, file_hash_current)
+            except Exception as e:
+                logger.debug(f"Hash calculation failed: {e}")
+        elif not is_directory and event_type == "created":
+            try:
+                file_hash_original = self.hash_tracker.calculate_hash(src_path)
+                self.hash_tracker.store_hash(src_path, file_hash_original)
+            except Exception as e:
+                logger.debug(f"Hash calculation failed: {e}")
+
         return MonitorEvent(
             token_id=token_id,
             path=src_path,
@@ -120,6 +278,13 @@ class HoneytokenHandler(FileSystemEventHandler):
             timestamp=time.time(),
             is_directory=is_directory,
             metadata=metadata,
+            process_name=process_info.get("process_name"),
+            process_id=process_info.get("process_id"),
+            process_user=process_info.get("process_user"),
+            process_cmdline=process_info.get("process_cmdline"),
+            file_hash_original=file_hash_original,
+            file_hash_current=file_hash_current,
+            content_modified=content_modified,
         )
 
     def _push_event(self, event: Optional[MonitorEvent]):
