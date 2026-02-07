@@ -73,9 +73,7 @@ Created: $(Get-Date)
 
 @"
 CONFIDENTIAL: Project Roadmap 2026
-- Phase 1: Infrastructure (COMPLETE)
-- Phase 2: Advanced Monitoring
-- Phase 3: ML-based Anomaly Detection
+Infrastructure, enhanced monitoring, and anomaly detection capabilities
 "@ | Set-Content "$honeytokenDir\roadmap.txt"
 
 @"

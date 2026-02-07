@@ -7,12 +7,16 @@ cryptography>=41.0.0
 # File system monitoring
 watchdog>=3.0.0
 
+# Process information capture
+psutil>=5.9.0
+
 # Database - Using built-in sqlite3 with application-level encryption via cryptography
 # Data will be encrypted/decrypted before storing/retrieving from SQLite
 
 # HTTP client for notifications
 aiohttp>=3.9.0
 aiosmtplib
+
 # YAML configuration support
 pyyaml>=6.0
 
